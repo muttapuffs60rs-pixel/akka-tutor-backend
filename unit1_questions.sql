@@ -1,0 +1,14 @@
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'Linear momentum is defined as the product of mass and which of the following?', 'Force', 'Acceleration', 'Velocity', 'Displacement', 'C');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'What is the SI unit for the moment of a force?', 'N', 'Nm', 'kg m/s', 'dyne', 'B');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'According to Newton''s second law, what is the formula for force?', 'F = m/a', 'F = ma', 'F = m-a', 'F = a/m', 'B');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'What is the value of the universal gravitational constant (G) in SI units?', '6.674 × 10^-11 Nm2 kg^-2', '9.8 ms^-2', '5.972 × 10^24 kg', '6.674 × 10^11 Nm2 kg^-2', 'A');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'Which formula is used to calculate the acceleration due to gravity (g)?', 'g = GM/R2', 'g = G/R2', 'g = GR2/M', 'g = M/GR2', 'A');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'What is the value of the mass of the Earth (M)?', '5.972 × 10^24 kg', '6.674 × 10^-11 kg', '1.625 × 10^24 kg', '9.8 × 10^24 kg', 'A');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'How many dynes are equal to 1 Newton?', '10^3 dyne', '10^4 dyne', '10^5 dyne', '10^6 dyne', 'C');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'What is the apparent weight of a person in a lift that is falling down freely?', 'Equal to actual weight', 'Zero', 'Greater than actual weight', 'Lesser than actual weight', 'B');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'Where is the weight of a body maximum on Earth?', 'At the equatorial region', 'At the poles', 'At the center of the Earth', 'Weight is the same everywhere', 'B');
+INSERT INTO mock_questions (subject, unit_number, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES ('Science', 1, 'What is the value of acceleration due to gravity on the surface of the moon?', '9.8 ms^-2', '1.625 ms^-2', '6.674 ms^-2', 'Zero', 'B');
+
+
+Projecturl: https://xhloiwzkoswtdmgwfoil.supabase.co
+Project api key: sb_publishable_xGuRAr3G-0Z4UF4FfNHbgQ_CUIhdwTt
