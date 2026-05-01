@@ -26,35 +26,18 @@ from prompts import AKKA_TUTOR_SYSTEM_PROMPT
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
+# Only requiring the DeepSeek key now
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# This model requires ~500MB+ RAM. Successfully runs on 2GB Standard Plan.
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
 # CLEAN DEEPSEEK INTEGRATION (Replaced ChatOpenAI hack)
-deepseek_llm = ChatDeepSeek(
-    model="deepseek-chat", # Standard DeepSeek Chat model
+llm = ChatDeepSeek(
+    model="deepseek-chat", 
     api_key=DEEPSEEK_API_KEY,
     temperature=0.3,
-    max_retries=1
-)
-
-gemini_llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash", 
-    google_api_key=GOOGLE_API_KEY,
-    temperature=0.3,
-    max_retries=0 
-)
-
-openai_llm = ChatOpenAI(
-    model="gpt-4o-mini", 
-    api_key=OPENAI_API_KEY, 
-    temperature=0.3,
-    max_retries=1
+    max_retries=3  # Increased retries since we removed fallbacks
 )
 
 # FALLBACK LOGIC: Primary is DeepSeek. If 429 error or down, use Gemini, then GPT.
