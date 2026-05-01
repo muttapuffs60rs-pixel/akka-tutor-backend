@@ -3,7 +3,11 @@ uvicorn
 python-dotenv
 supabase
 langchain
+langchain-community
 langchain-deepseek
+langchain-google-genai
+langchain-openai
 langchain-huggingface
 sentence-transformers
 torch
+pydantic
