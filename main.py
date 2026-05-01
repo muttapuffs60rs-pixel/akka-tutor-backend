@@ -11,11 +11,13 @@ from typing import List, Optional
 from supabase import create_client, Client
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from langchain_deepseek import ChatDeepSeek # Updated for native DeepSeek
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 import uvicorn
 
+# Ensure your local prompts.py is updated to say "Tutor Preethi"
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT
 
 # ==========================================
@@ -29,12 +31,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# This model requires ~500MB+ RAM. Successfully runs on 2GB Standard Plan.
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-deepseek_llm = ChatOpenAI(
-    model="deepseek-v4-flash",
-    openai_api_key=DEEPSEEK_API_KEY,
-    openai_api_base="https://api.deepseek.com/v1",
+# CLEAN DEEPSEEK INTEGRATION (Replaced ChatOpenAI hack)
+deepseek_llm = ChatDeepSeek(
+    model="deepseek-chat", # Standard DeepSeek Chat model
+    api_key=DEEPSEEK_API_KEY,
     temperature=0.3,
     max_retries=1
 )
@@ -53,6 +57,7 @@ openai_llm = ChatOpenAI(
     max_retries=1
 )
 
+# FALLBACK LOGIC: Primary is DeepSeek. If 429 error or down, use Gemini, then GPT.
 llm = deepseek_llm.with_fallbacks([gemini_llm, openai_llm])
 
 app = FastAPI(title="Tutor Preethi AI - Standard 10 Edition")
@@ -75,7 +80,6 @@ class ChatRequest(BaseModel):
     history: List[str] = [] 
     image_data: Optional[str] = None 
 
-# (Other models remain unchanged)
 class QuizQuestion(BaseModel):
     question: str; option_a: str; option_b: str; option_c: str; option_d: str; correct_answer: str; explanation: str
 
@@ -111,10 +115,7 @@ async def ask_tutor(data: ChatRequest):
         questions_asked = profile.get('questions_today', 0)
         tier = profile.get('subscription_tier', 'free')
         
-        # UPDATED PRICING LOGIC
-        # tier_49 (Exam Booster) = Unlimited (9999)
-        # tier_199 (Standard) = 50
-        # tier_499 (Syllabus Master) = 150
+        # PRICING LIMITS
         max_q = {'free': 5, 'tier_49': 9999, 'tier_199': 50, 'tier_499': 150, 'admin': 999999}.get(tier, 5)
         
         if questions_asked >= max_q:
@@ -161,7 +162,6 @@ async def ask_tutor(data: ChatRequest):
         traceback.print_exc()
         return {"answer": "Oops! Tutor Preethi has a technical issue. Try again later! 💜"}
 
-# (Remaining endpoints for Quiz and Onboarding stay the same)
 @app.get("/check-onboarding/{user_id}")
 async def check_onboarding(user_id: str):
     try:
@@ -184,15 +184,34 @@ async def generate_quiz(data: QuizRequest):
         profile_res = supabase.table("profiles").select("*").eq("id", data.user_id).execute()
         quizzes_today = profile_res.data[0].get('quizzes_today', 0)
         if quizzes_today >= 5: raise HTTPException(status_code=403)
-        search_query = f"{data.subject} Units: {', '.join(data.units)}"; query_vector = embeddings.embed_query(search_query)
-        rpc_res = supabase.rpc("hybrid_match_documents", {"query_embedding": query_vector, "query_text": search_query, "match_threshold": 0.3, "match_count": 8, "filter_grade": data.grade_level, "filter_subject": data.subject}).execute()
+        
+        search_query = f"{data.subject} Units: {', '.join(data.units)}"
+        query_vector = embeddings.embed_query(search_query)
+        
+        rpc_res = supabase.rpc("hybrid_match_documents", {
+            "query_embedding": query_vector, 
+            "query_text": search_query, 
+            "match_threshold": 0.3, 
+            "match_count": 8, 
+            "filter_grade": data.grade_level, 
+            "filter_subject": data.subject
+        }).execute()
+        
         context = "\n---\n".join([res['content'] for res in rpc_res.data])
-        quiz_prompt = ChatPromptTemplate.from_messages([("system", "You are Tutor Preethi. Context: {context}"), ("human", "Generate {num} MCQs.")])
+        quiz_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are Tutor Preethi. Use this Context: {context}"), 
+            ("human", "Generate {num} MCQs based on the syllabus.")
+        ])
+        
+        # Using structured output for Quiz generation
         chain = quiz_prompt | deepseek_llm.with_structured_output(QuizResponse)
         quiz_data = chain.invoke({"num": data.num_questions, "context": context})
+        
         supabase.table("profiles").update({"quizzes_today": quizzes_today + 1}).eq("id", data.user_id).execute()
         return quiz_data.model_dump()
-    except: raise HTTPException(status_code=500)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
