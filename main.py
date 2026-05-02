@@ -41,7 +41,9 @@ deepseek_llm = ChatDeepSeek(
 )
 
 # FALLBACK LOGIC: Primary is DeepSeek. If 429 error or down, use Gemini, then GPT.
-llm = deepseek_llm.with_fallbacks([gemini_llm, openai_llm])
+# llm = deepseek_llm.with_fallbacks([gemini_llm, openai_llm])
+
+llm = deepseek_llm
 
 app = FastAPI(title="Tutor Preethi AI - Standard 10 Edition")
 
