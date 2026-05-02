@@ -33,11 +33,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
 # CLEAN DEEPSEEK INTEGRATION (Replaced ChatOpenAI hack)
-llm = ChatDeepSeek(
+deepseek_llm = ChatDeepSeek(
     model="deepseek-chat", 
     api_key=DEEPSEEK_API_KEY,
     temperature=0.3,
-    max_retries=3  # Increased retries since we removed fallbacks
+    max_retries=3
 )
 
 # FALLBACK LOGIC: Primary is DeepSeek. If 429 error or down, use Gemini, then GPT.
