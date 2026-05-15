@@ -1,9 +1,12 @@
 import os
+import io
 import traceback
+import base64
+import json
 from datetime import date
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -11,13 +14,13 @@ from typing import List, Optional
 from supabase import create_client, Client
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
-from langchain_deepseek import ChatDeepSeek # Updated for native DeepSeek
+from langchain_deepseek import ChatDeepSeek 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 import uvicorn
 
-# Ensure your local prompts.py is updated to say "Tutor Preethi"
+# Ensure your local prompts.py is updated
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT
 
 # ==========================================
@@ -26,149 +29,124 @@ from prompts import AKKA_TUTOR_SYSTEM_PROMPT
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-# Only requiring the DeepSeek key now
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-# CLEAN DEEPSEEK INTEGRATION (Replaced ChatOpenAI hack)
-deepseek_llm = ChatDeepSeek(
-    model="deepseek-chat", 
-    api_key=DEEPSEEK_API_KEY,
-    temperature=0.3,
-    max_retries=3
-)
+# LLM initializations
+deepseek_llm = ChatDeepSeek(model='deepseek-v4-flash', api_key=DEEPSEEK_API_KEY)
+# Using Gemini 2.0 Flash specifically for Vision/Multimodal tasks
+gemini_vision_llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=GOOGLE_API_KEY)
 
-# FALLBACK LOGIC: Primary is DeepSeek. If 429 error or down, use Gemini, then GPT.
-# llm = deepseek_llm.with_fallbacks([gemini_llm, openai_llm])
-
-llm = deepseek_llm
-
-app = FastAPI(title="Tutor Preethi AI - Standard 10 Edition")
+app = FastAPI(title="Akka Tutor API - Snap & Learn Edition")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"], 
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# --- DATA MODELS ---
+# ==========================================
+# 2. DATA MODELS
+# ==========================================
 class ChatRequest(BaseModel):
-    user_id: str           
-    question: str
-    grade_level: int
+    user_id: str
+    question: str  # Matches Flutter field 'question'
     subject: str
-    is_first_message: bool = False
-    history: List[str] = [] 
-    image_data: Optional[str] = None 
-
-class QuizQuestion(BaseModel):
-    question: str; option_a: str; option_b: str; option_c: str; option_d: str; correct_answer: str; explanation: str
-
-class QuizResponse(BaseModel):
-    questions: List[QuizQuestion]
+    grade_level: int # Changed to int to match Flutter state
+    image_url: Optional[str] = None # Added to support vision from Flutter
+    history: Optional[List[str]] = []
 
 class QuizRequest(BaseModel):
-    user_id: str; grade_level: int; subject: str; units: List[str]; section: str = "All Sections"; num_questions: int
+    user_id: str
+    subject: str
+    units: List[str]
+    grade_level: str
+    num_questions: int = 5
 
-class ProfileUpdate(BaseModel):
-    user_id: str; full_name: str; grade_level: int
+class QuizResponse(BaseModel):
+    questions: List[dict] = Field(description="List of MCQs with question, options, and answer")
 
 # ==========================================
-# 4. CHAT API
+# 3. UPDATED ROUTE: ASK (CHATS & VISION)
 # ==========================================
 
 @app.post("/ask")
-async def ask_tutor(data: ChatRequest):
+async def chat_handler(data: ChatRequest):
     try:
-        profile_res = supabase.table('profiles').select('*').eq('id', data.user_id).execute()
-        today_str = date.today().isoformat()
+        # 1. Check Usage Limits
+        profile_res = supabase.table("profiles").select("chats_today").eq("id", data.user_id).execute()
+        if not profile_res.data: raise HTTPException(status_code=404, detail="User not found")
         
-        if not profile_res.data:
-            profile = {"id": data.user_id, "subscription_tier": "free", "questions_today": 0, "last_active_date": today_str}
-            supabase.table('profiles').insert(profile).execute()
-        else:
-            profile = profile_res.data[0]
+        chats_today = profile_res.data[0].get('chats_today', 0)
+        if chats_today >= 20: 
+            return {"answer": "Daily limit reached. Please upgrade to Pro!", "show_paywall": True}
 
-        if profile.get('last_active_date') != today_str:
-            supabase.table('profiles').update({'questions_today': 0, 'last_active_date': today_str}).eq('id', data.user_id).execute()
-            profile['questions_today'] = 0
-
-        questions_asked = profile.get('questions_today', 0)
-        tier = profile.get('subscription_tier', 'free')
-        
-        # PRICING LIMITS
-        max_q = {'free': 5, 'tier_49': 9999, 'tier_199': 50, 'tier_499': 150, 'admin': 999999}.get(tier, 5)
-        
-        if questions_asked >= max_q:
-            return {
-                "answer": "Today's limit reached! Upgrade your plan to keep learning with Tutor Preethi. 🚀",
-                "show_paywall": True
-            }
-
-        user_grade = data.grade_level if data.grade_level != 0 else 10
+        # 2. RAG Logic (Only if no image, or to give context to image)
         query_vector = embeddings.embed_query(data.question)
-        
         rpc_res = supabase.rpc("hybrid_match_documents", {
             "query_embedding": query_vector,
-            "query_text": data.question,       
-            "match_threshold": 0.3,               
-            "match_count": 4,
-            "filter_grade": user_grade, 
-            "filter_subject": data.subject    
+            "query_text": data.question,
+            "match_threshold": 0.2,
+            "match_count": 3,
+            "filter_grade": str(data.grade_level),
+            "filter_subject": data.subject
         }).execute()
-        
-        context = "\n---\n".join([res['content'] for res in rpc_res.data]) or "No context."
 
-        formatted_history = []
-        for msg in data.history:
-            role = "human" if "You:" in msg else "ai"
-            formatted_history.append((role, msg.replace("You:", "").replace("Preethi:", "").strip()))
+        context = "\n---\n".join([res['content'] for res in rpc_res.data]) if rpc_res.data else "No specific textbook context found."
 
-        system_text = AKKA_TUTOR_SYSTEM_PROMPT.format(
-            grade_level=user_grade,
-            subject=data.subject,
-            greeting_rule="Warm greeting" if data.is_first_message else "Direct answer",
-            context=context,
-            user_name=profile.get('full_name', 'Student') 
-        )
+        # 3. Decision: DeepSeek (Text) vs Gemini (Vision)
+        if data.image_url:
+            # MULTIMODAL LOGIC (Gemini 2.0 Flash)
+            # Formatting prompt specifically for tutoring context
+            vision_prompt = f"""
+            SYSTEM: {AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)}
+            USER QUESTION: {data.question}
+            INSTRUCTIONS: Analyze the image provided. Explain the concept or solve the problem shown.
+            Answer in Tanglish. Use point-wise format suitable for TN Public Exams.
+            """
+            message = HumanMessage(content=[
+                {"type": "text", "text": vision_prompt},
+                {
+                    "type": "image_url", 
+                    "image_url": {
+                        "url": data.image_url,
+                        "detail": "high"  # <--- Rule 3: High Detail added here
+                    }
+                }
+            ])
+            response = gemini_vision_llm.invoke([message])
+        else:
+            # TEXT-ONLY LOGIC (DeepSeek)
+            messages = [
+                SystemMessage(content=AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)),
+                HumanMessage(content=data.question)
+            ]
+            response = deepseek_llm.invoke(messages)
 
-        user_msg = HumanMessage(content=data.question + "\n\nExplain in Tanglish.")
-        ai_res = llm.invoke([SystemMessage(content=system_text), *formatted_history, user_msg])
-        
-        supabase.table('profiles').update({'questions_today': questions_asked + 1}).eq('id', data.user_id).execute()
-        
-        return {"answer": ai_res.content}
+        # 4. Update limits & profile
+        supabase.table("profiles").update({"chats_today": chats_today + 1}).eq("id", data.user_id).execute()
+
+        return {"answer": response.content, "show_paywall": False}
 
     except Exception as e:
-        traceback.print_exc()
-        return {"answer": "Oops! Tutor Preethi has a technical issue. Try again later! 💜"}
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/check-onboarding/{user_id}")
-async def check_onboarding(user_id: str):
-    try:
-        response = supabase.table('profiles').select('onboarding_complete').eq('id', user_id).execute()
-        return {"onboarding_complete": bool(response.data and response.data[0].get('onboarding_complete'))}
-    except: return {"onboarding_complete": False}
-
-@app.post("/complete-onboarding")
-async def complete_onboarding(data: ProfileUpdate):
-    try:
-        today_str = date.today().isoformat()
-        profile_data = {"id": data.user_id, "full_name": data.full_name, "grade_level": data.grade_level, "onboarding_complete": True, "last_active_date": today_str, "subscription_tier": "free", "questions_today": 0, "quizzes_today": 0}
-        supabase.table('profiles').upsert(profile_data).execute()
-        return {"status": "success"}
-    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+# ==========================================
+# 4. ROUTE: QUIZ GENERATION
+# ==========================================
 
 @app.post("/generate-quiz")
 async def generate_quiz(data: QuizRequest):
     try:
-        profile_res = supabase.table("profiles").select("*").eq("id", data.user_id).execute()
+        profile_res = supabase.table("profiles").select("quizzes_today").eq("id", data.user_id).execute()
         quizzes_today = profile_res.data[0].get('quizzes_today', 0)
-        if quizzes_today >= 5: raise HTTPException(status_code=403)
+        if quizzes_today >= 5: raise HTTPException(status_code=403, detail="Quiz limit reached")
         
         search_query = f"{data.subject} Units: {', '.join(data.units)}"
         query_vector = embeddings.embed_query(search_query)
@@ -182,21 +160,22 @@ async def generate_quiz(data: QuizRequest):
             "filter_subject": data.subject
         }).execute()
         
-        context = "\n---\n".join([res['content'] for res in rpc_res.data])
+        context = "\n---\n".join([res['content'] for res in rpc_res.data]) if rpc_res.data else "General Syllabus context"
+        
         quiz_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are Tutor Preethi. Use this Context: {context}"), 
+            ("system", "You are Tutor Akka. Use this Context: {context}. Generate high-quality MCQs for the Samacheer Kalvi exam."), 
             ("human", "Generate {num} MCQs based on the syllabus.")
         ])
         
-        # Using structured output for Quiz generation
         chain = quiz_prompt | deepseek_llm.with_structured_output(QuizResponse)
         quiz_data = chain.invoke({"num": data.num_questions, "context": context})
         
         supabase.table("profiles").update({"quizzes_today": quizzes_today + 1}).eq("id", data.user_id).execute()
-        return quiz_data.model_dump()
+        
+        return quiz_data
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500)
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
