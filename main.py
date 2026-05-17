@@ -32,7 +32,8 @@ deepseek_llm = ChatDeepSeek(
 )
 
 # OCR Reader (loads once during startup)
-ocr_reader = easyocr.Reader(['en', 'ta'], gpu=False)
+en_reader = easyocr.Reader(['en'], gpu=False)
+ta_reader = easyocr.Reader(['ta'], gpu=False)
 
 app = FastAPI(title="Akka Tutor API")
 
@@ -127,22 +128,25 @@ async def chat_handler(data: ChatRequest):
         messages = []
 
         # ==================================
-        # IMAGE OCR FLOW
+        # IMAGE OCR FLOW (Bilingual Separation Fix)
         # ==================================
         if data.image_url:
             await asyncio.sleep(1)
 
             image = requests.get(data.image_url, timeout=15)
 
-            extracted = ocr_reader.readtext(
-                image.content,
-                detail=0,
-                paragraph=True
-            )
+            # Extract English text layout
+            extracted_en = en_reader.readtext(image.content, detail=0, paragraph=True)
+            
+            # Extract Tamil text layout cleanly without matrix size collisions
+            extracted_ta = ta_reader.readtext(image.content, detail=0, paragraph=True)
+
+            # Combine the results safely
+            combined_extracted = extracted_en + extracted_ta
 
             extracted_text = (
-                " ".join(extracted)
-                if extracted else
+                " ".join(combined_extracted)
+                if combined_extracted else
                 "No readable text found."
             )
 
