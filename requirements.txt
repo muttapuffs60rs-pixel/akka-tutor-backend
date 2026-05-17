@@ -11,3 +11,6 @@ langchain-huggingface
 sentence-transformers
 torch
 pydantic
+easyocr
+pillow
+requests
