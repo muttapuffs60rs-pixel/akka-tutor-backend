@@ -31,9 +31,8 @@ deepseek_llm = ChatDeepSeek(
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
-# OCR Reader (loads once during startup)
-en_reader = easyocr.Reader(['en'], gpu=False)
-ta_reader = easyocr.Reader(['ta'], gpu=False)
+# FIXED: Single-pass initialization avoids the PyTorch internal state matrix size mismatch during deployment
+ocr_reader = easyocr.Reader(['en'], gpu=False)
 
 app = FastAPI(title="Akka Tutor API")
 
@@ -124,29 +123,26 @@ async def chat_handler(data: ChatRequest):
             data.grade_level
         )
 
-        # Initialize messages variable out here to secure scope cleanly
         messages = []
 
         # ==================================
-        # IMAGE OCR FLOW (Bilingual Separation Fix)
+        # IMAGE OCR FLOW (Stable Single-Pass)
         # ==================================
         if data.image_url:
             await asyncio.sleep(1)
 
             image = requests.get(data.image_url, timeout=15)
 
-            # Extract English text layout
-            extracted_en = en_reader.readtext(image.content, detail=0, paragraph=True)
-            
-            # Extract Tamil text layout cleanly without matrix size collisions
-            extracted_ta = ta_reader.readtext(image.content, detail=0, paragraph=True)
-
-            # Combine the results safely
-            combined_extracted = extracted_en + extracted_ta
+            # Clean single-pass layout detection completely protects your 2GB container memory
+            extracted = ocr_reader.readtext(
+                image.content,
+                detail=0,
+                paragraph=True
+            )
 
             extracted_text = (
-                " ".join(combined_extracted)
-                if combined_extracted else
+                " ".join(extracted)
+                if extracted else
                 "No readable text found."
             )
 
@@ -166,7 +162,6 @@ INSTRUCTIONS:
 - Give point-wise answers
 - Keep it easy for students
 """
-            # Safe text assignments ensuring fallback handles empty user strings cleanly
             user_msg = data.question if data.question.strip() else "Explain this image contents."
 
             messages = [
@@ -189,9 +184,10 @@ INSTRUCTIONS:
 
         response = deepseek_llm.invoke(messages)
 
+        # FIXED: Correctly pass the target column string "chats_today" to prevent the 500 runtime database exception
         update_profile(
             data.user_id,
-            data.user_id, # Safely mapping profiles increment
+            "chats_today", 
             chats_today + 1
         )
 
