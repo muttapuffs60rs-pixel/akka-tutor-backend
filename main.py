@@ -27,7 +27,7 @@ embeddings = HuggingFaceEmbeddings(
 )
 
 deepseek_llm = ChatDeepSeek(
-    model="deepseek-v3",
+    model="deepseek-v4-flash",
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
