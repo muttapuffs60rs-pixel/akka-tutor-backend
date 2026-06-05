@@ -72,20 +72,25 @@ class QuizResponse(BaseModel):
 
 def get_context(query: str, subject: str, grade: int,
                 threshold=0.2, count=3):
-    vector = embeddings.embed_query(query)
+    try:
+        vector = embeddings.embed_query(query)
 
-    rpc = supabase.rpc("hybrid_match_documents", {
-        "query_embedding": vector,
-        "query_text": query,
-        "match_threshold": threshold,
-        "match_count": count,
-        "filter_grade": str(grade),
-        "filter_subject": subject
-    }).execute()
+        # FIXED: Cast grade safely to string to defend against internal RPC parsing failures
+        rpc = supabase.rpc("hybrid_match_documents", {
+            "query_embedding": vector,
+            "query_text": query,
+            "match_threshold": threshold,
+            "match_count": count,
+            "filter_grade": str(grade),
+            "filter_subject": str(subject)
+        }).execute()
 
-    return "\n---\n".join(
-        r["content"] for r in rpc.data
-    ) if rpc.data else "No specific textbook context found."
+        return "\n---\n".join(
+            r["content"] for r in rpc.data
+        ) if rpc.data else "No specific textbook context found."
+    except Exception as rpc_err:
+        print(f"RPC Context lookup error (falling back): {rpc_err}")
+        return "No specific textbook context found."
 
 def get_profile(user_id: str, field: str):
     res = supabase.table("profiles").select(field).eq("id", user_id).execute()
@@ -98,7 +103,7 @@ def get_profile(user_id: str, field: str):
 
 def update_profile(user_id: str, field: str, value: int):
     supabase.table("profiles").update({
-        field: value
+        field: int(value)
     }).eq("id", user_id).execute()
 
 # ==========================================
@@ -108,46 +113,40 @@ def update_profile(user_id: str, field: str, value: int):
 @app.post("/ask")
 async def chat_handler(data: ChatRequest):
     try:
-        # 1. FIXED: Fetch user profile attributes safely
-        profile_res = supabase.table("profiles").select("chats_today, tier").eq("id", data.user_id).execute()
+        # 1. Fetch user profile attributes safely (Using subscription_tier to match Supabase)
+        profile_res = supabase.table("profiles").select("chats_today, subscription_tier").eq("id", data.user_id).execute()
         if not profile_res.data:
             raise HTTPException(status_code=404, detail="User profile not found")
         
         user_profile = profile_res.data[0]
         
-        # FIXED: Defend against NULL database cell states by falling back safely to 0
         raw_chats = user_profile.get("chats_today")
-        chats_today = raw_chats if raw_chats is not None else 0
+        chats_today = int(raw_chats) if raw_chats is not None else 0
         
-        # FIXED: Safely scrub string formatting variables and capture NULL tiers as free
-        raw_tier = user_profile.get("tier")
+        # Pull from the correct dictionary key name matching the select query
+        raw_tier = user_profile.get("subscription_tier")
         user_tier = str(raw_tier).strip().lower() if raw_tier is not None else "free"
 
-        # 2. FIXED: Skip check entirely if user is Admin
+        # 2. Skip check entirely if user is Admin
         if user_tier != "admin" and chats_today >= 20:
             return {
                 "answer": "Daily limit reached. Upgrade to Pro!",
                 "show_paywall": True
             }
 
+        # Handle empty/blank queries smoothly
+        clean_question = data.question.strip() if data.question else ""
+        
         context = get_context(
-            data.question if data.question.strip() else "textbook page",
+            clean_question if clean_question else "textbook page",
             data.subject,
             data.grade_level
         )
 
-        # 3. FIXED: Reconstruct message history for DeepSeek continuity
-        formatted_history = []
-        for msg in data.history:
-            if msg.get("role") == "user":
-                formatted_history.append(HumanMessage(content=msg.get("content", "")))
-            elif msg.get("role") == "assistant":
-                formatted_history.append(AIMessage(content=msg.get("content", "")))
-
         # ==================================
         # IMAGE OCR FLOW
         # ==================================
-        if data.image_url:
+        if data.image_url and data.image_url.strip():
             await asyncio.sleep(1)
             image = requests.get(data.image_url, timeout=15)
 
@@ -167,7 +166,7 @@ TEXTBOOK IMAGE TEXT:
 \"\"\"{extracted_text}\"\"\"
 
 STUDENT QUESTION:
-{data.question if data.question.strip() else "Explain the concepts shown in this textbook image section."}
+{clean_question if clean_question else "Explain the concepts shown in this textbook image section."}
 
 INSTRUCTIONS:
 - Explain clearly in Tanglish
@@ -175,20 +174,21 @@ INSTRUCTIONS:
 - Give point-wise answers
 - Keep it easy for students
 """
-            user_msg = data.question if data.question.strip() else "Explain this image contents."
-
-            # Append context instruction system prompt first, then historical turns, then the latest user query
-            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=user_msg)]
+            user_msg = clean_question if clean_question else "Explain this image contents."
+            messages = [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)]
 
         # ==================================
         # NORMAL TEXT FLOW
         # ==================================
         else:
             system_prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)
-            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=data.question)]
+            messages = [SystemMessage(content=system_prompt), HumanMessage(content=clean_question)]
 
+        # Call LLM Engine with absolute type safety
         response = deepseek_llm.invoke(messages)
+        ai_response_text = response.content if response and response.content else "No response generated."
 
+        # Database Counter Increment Execution
         update_profile(
             data.user_id,
             "chats_today", 
@@ -196,11 +196,12 @@ INSTRUCTIONS:
         )
 
         return {
-            "answer": response.content,
+            "answer": ai_response_text,
             "show_paywall": False
         }
 
     except Exception as e:
+        print("--- CRITICAL SERVER EXCEPTION TRACEBACK ---")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
