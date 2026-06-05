@@ -8,7 +8,7 @@ from supabase import create_client, Client
 from langchain_deepseek import ChatDeepSeek
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT, AKKA_QUIZ_PROMPT
 
 # ==========================================
@@ -31,7 +31,6 @@ deepseek_llm = ChatDeepSeek(
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
-# FIXED: Single-pass initialization avoids the PyTorch internal state matrix size mismatch during deployment
 ocr_reader = easyocr.Reader(['en'], gpu=False)
 
 app = FastAPI(title="Akka Tutor API")
@@ -54,7 +53,6 @@ class ChatRequest(BaseModel):
     subject: str
     grade_level: int
     image_url: Optional[str] = None
-    history: List[str] = Field(default_factory=list)
 
 class QuizRequest(BaseModel):
     user_id: str
@@ -95,7 +93,8 @@ def get_profile(user_id: str, field: str):
     if not res.data:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return res.data[0].get(field, 0)
+    raw_val = res.data[0].get(field)
+    return raw_val if raw_val is not None else 0
 
 def update_profile(user_id: str, field: str, value: int):
     supabase.table("profiles").update({
@@ -109,9 +108,23 @@ def update_profile(user_id: str, field: str, value: int):
 @app.post("/ask")
 async def chat_handler(data: ChatRequest):
     try:
-        chats_today = get_profile(data.user_id, "chats_today")
+        # 1. FIXED: Fetch user profile attributes safely
+        profile_res = supabase.table("profiles").select("chats_today, tier").eq("id", data.user_id).execute()
+        if not profile_res.data:
+            raise HTTPException(status_code=404, detail="User profile not found")
+        
+        user_profile = profile_res.data[0]
+        
+        # FIXED: Defend against NULL database cell states by falling back safely to 0
+        raw_chats = user_profile.get("chats_today")
+        chats_today = raw_chats if raw_chats is not None else 0
+        
+        # FIXED: Safely scrub string formatting variables and capture NULL tiers as free
+        raw_tier = user_profile.get("tier")
+        user_tier = str(raw_tier).strip().lower() if raw_tier is not None else "free"
 
-        if chats_today >= 20:
+        # 2. FIXED: Skip check entirely if user is Admin
+        if user_tier != "admin" and chats_today >= 20:
             return {
                 "answer": "Daily limit reached. Upgrade to Pro!",
                 "show_paywall": True
@@ -123,30 +136,30 @@ async def chat_handler(data: ChatRequest):
             data.grade_level
         )
 
-        messages = []
+        # 3. FIXED: Reconstruct message history for DeepSeek continuity
+        formatted_history = []
+        for msg in data.history:
+            if msg.get("role") == "user":
+                formatted_history.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("role") == "assistant":
+                formatted_history.append(AIMessage(content=msg.get("content", "")))
 
         # ==================================
-        # IMAGE OCR FLOW (Stable Single-Pass)
+        # IMAGE OCR FLOW
         # ==================================
         if data.image_url:
             await asyncio.sleep(1)
-
             image = requests.get(data.image_url, timeout=15)
 
-            # Clean single-pass layout detection completely protects your 2GB container memory
             extracted = ocr_reader.readtext(
                 image.content,
                 detail=0,
                 paragraph=True
             )
 
-            extracted_text = (
-                " ".join(extracted)
-                if extracted else
-                "No readable text found."
-            )
+            extracted_text = " ".join(extracted) if extracted else "No readable text found."
 
-            prompt = f"""
+            system_prompt = f"""
 SYSTEM:
 {AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)}
 
@@ -164,27 +177,18 @@ INSTRUCTIONS:
 """
             user_msg = data.question if data.question.strip() else "Explain this image contents."
 
-            messages = [
-                SystemMessage(content=prompt),
-                HumanMessage(content=user_msg)
-            ]
+            # Append context instruction system prompt first, then historical turns, then the latest user query
+            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=user_msg)]
 
         # ==================================
         # NORMAL TEXT FLOW
         # ==================================
         else:
-            messages = [
-                SystemMessage(
-                    content=AKKA_TUTOR_SYSTEM_PROMPT.format(
-                        context=context
-                    )
-                ),
-                HumanMessage(content=data.question)
-            ]
+            system_prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)
+            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=data.question)]
 
         response = deepseek_llm.invoke(messages)
 
-        # FIXED: Correctly pass the target column string "chats_today" to prevent the 500 runtime database exception
         update_profile(
             data.user_id,
             "chats_today", 
