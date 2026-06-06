@@ -86,9 +86,15 @@ def get_context(query: str, subject: str, grade: int,
             "filter_subject": str(subject)
         }).execute()
 
-        return "\n---\n".join(
-            r["content"] for r in rpc.data
-        ) if rpc.data else "No specific textbook context found."
+        # Combine content with its structural metadata so the LLM knows section numbers
+        chunks = []
+        for r in rpc.data:
+            metadata_header = ""
+            if r.get('unit_name') or r.get('section_name'):
+                metadata_header = f"[{r.get('unit_name', '')} -> {r.get('section_name', '')} -> {r.get('sub_section_name', '')}]\n"
+            chunks.append(metadata_header + r.get("content", ""))
+
+        return "\n---\n".join(chunks) if chunks else "No specific textbook context found."
     except Exception as rpc_err:
         print(f"RPC Context lookup error (falling back): {rpc_err}")
         return "No specific textbook context found."
