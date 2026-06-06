@@ -74,6 +74,32 @@ class QuizResponse(BaseModel):
 def get_context(query: str, subject: str, grade: int,
                 threshold=0.2, count=3):
     try:
+        import re
+        chunks = []
+        
+        # 1. EXPLICIT SQL MATCHING (Fixes the "Section 4.11" issue)
+        # Vector search is terrible for pure numbers. If the student asks for "4.11.2", explicitly query the DB.
+        section_match = re.search(r'\b(\d+\.\d+(?:\.\d+)?)\b', query)
+        if section_match:
+            sec_num = section_match.group(1)
+            try:
+                exact_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
+                    .eq("grade_level", grade) \
+                    .eq("subject", subject) \
+                    .or_(f"section_name.ilike.%{sec_num}%,sub_section_name.ilike.%{sec_num}%,content.ilike.%{sec_num}%") \
+                    .limit(3) \
+                    .execute()
+                    
+                if exact_res.data:
+                    for meta in exact_res.data:
+                        metadata_header = ""
+                        if meta.get('unit_name') or meta.get('section_name'):
+                            metadata_header = f"[{meta.get('unit_name', '')} -> {meta.get('section_name', '')} -> {meta.get('sub_section_name', '')}]\n"
+                        chunks.append(metadata_header + meta.get("content", ""))
+            except Exception as e:
+                print(f"Exact match lookup failed: {e}")
+
+        # 2. VECTOR SEARCH (Fallback & Context enrichment)
         vector = embeddings.embed_query(query)
 
         # Cast grade safely to string to defend against internal RPC parsing failures
@@ -88,7 +114,6 @@ def get_context(query: str, subject: str, grade: int,
 
         # The RPC only returns 'content' and 'similarity'. 
         # We must look up the structural metadata for these chunks!
-        chunks = []
         if rpc.data:
             returned_contents = [r["content"] for r in rpc.data if "content" in r]
             # Fetch metadata from documents table where content matches
@@ -99,6 +124,10 @@ def get_context(query: str, subject: str, grade: int,
             
             for r in rpc.data:
                 c = r.get("content", "")
+                # Prevent duplicates if exact match already found it
+                if any(c in existing_chunk for existing_chunk in chunks):
+                    continue
+                    
                 meta = meta_map.get(c, {})
                 metadata_header = ""
                 if meta.get('unit_name') or meta.get('section_name'):
