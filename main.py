@@ -86,13 +86,24 @@ def get_context(query: str, subject: str, grade: int,
             "filter_subject": str(subject)
         }).execute()
 
-        # Combine content with its structural metadata so the LLM knows section numbers
+        # The RPC only returns 'content' and 'similarity'. 
+        # We must look up the structural metadata for these chunks!
         chunks = []
-        for r in rpc.data:
-            metadata_header = ""
-            if r.get('unit_name') or r.get('section_name'):
-                metadata_header = f"[{r.get('unit_name', '')} -> {r.get('section_name', '')} -> {r.get('sub_section_name', '')}]\n"
-            chunks.append(metadata_header + r.get("content", ""))
+        if rpc.data:
+            returned_contents = [r["content"] for r in rpc.data if "content" in r]
+            # Fetch metadata from documents table where content matches
+            meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name").in_("content", returned_contents).execute()
+            
+            # Create a lookup map
+            meta_map = {row["content"]: row for row in meta_res.data}
+            
+            for r in rpc.data:
+                c = r.get("content", "")
+                meta = meta_map.get(c, {})
+                metadata_header = ""
+                if meta.get('unit_name') or meta.get('section_name'):
+                    metadata_header = f"[{meta.get('unit_name', '')} -> {meta.get('section_name', '')} -> {meta.get('sub_section_name', '')}]\n"
+                chunks.append(metadata_header + c)
 
         return "\n---\n".join(chunks) if chunks else "No specific textbook context found."
     except Exception as rpc_err:
