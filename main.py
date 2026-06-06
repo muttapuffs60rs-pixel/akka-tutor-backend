@@ -127,10 +127,23 @@ async def chat_handler(data: ChatRequest):
         raw_tier = user_profile.get("subscription_tier")
         user_tier = str(raw_tier).strip().lower() if raw_tier is not None else "free"
 
-        # 2. Skip check entirely if user is Admin
-        if user_tier != "admin" and chats_today >= 20:
+        # FIXED: Enforce accurate subscription package ceilings and custom messaging
+        max_allowed_chats = 5  # Default Free Tier
+        limit_message = "Daily limit reached. Upgrade to Pro!"
+        
+        if user_tier == "tier_199":
+            max_allowed_chats = 50
+            limit_message = "Your limit per day is over. Upgrade your plan to get more daily questions!"
+        elif user_tier == "tier_499":
+            max_allowed_chats = 150
+            limit_message = "Your limit per day is over. Upgrade your plan to get more daily questions!"
+        elif user_tier in ["tier_49", "admin"]:
+            max_allowed_chats = 999999  # Unlimited day usage
+
+        # Enforce subscription cap barriers dynamically
+        if user_tier not in ["admin", "tier_49"] and chats_today >= max_allowed_chats:
             return {
-                "answer": "Daily limit reached. Upgrade to Pro!",
+                "answer": limit_message,
                 "show_paywall": True
             }
 
