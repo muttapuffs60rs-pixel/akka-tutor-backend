@@ -53,6 +53,7 @@ class ChatRequest(BaseModel):
     subject: str
     grade_level: int
     image_url: Optional[str] = None
+    history: List[dict] = []  # FIXED: Added history back so the backend accepts Flutter's memory payload
 
 class QuizRequest(BaseModel):
     user_id: str
@@ -75,7 +76,7 @@ def get_context(query: str, subject: str, grade: int,
     try:
         vector = embeddings.embed_query(query)
 
-        # FIXED: Cast grade safely to string to defend against internal RPC parsing failures
+        # Cast grade safely to string to defend against internal RPC parsing failures
         rpc = supabase.rpc("hybrid_match_documents", {
             "query_embedding": vector,
             "query_text": query,
@@ -113,7 +114,7 @@ def update_profile(user_id: str, field: str, value: int):
 @app.post("/ask")
 async def chat_handler(data: ChatRequest):
     try:
-        # 1. Fetch user profile attributes safely (Using subscription_tier to match Supabase)
+        # Fetch user profile attributes safely
         profile_res = supabase.table("profiles").select("chats_today, subscription_tier").eq("id", data.user_id).execute()
         if not profile_res.data:
             raise HTTPException(status_code=404, detail="User profile not found")
@@ -123,12 +124,11 @@ async def chat_handler(data: ChatRequest):
         raw_chats = user_profile.get("chats_today")
         chats_today = int(raw_chats) if raw_chats is not None else 0
         
-        # Pull from the correct dictionary key name matching the select query
         raw_tier = user_profile.get("subscription_tier")
         user_tier = str(raw_tier).strip().lower() if raw_tier is not None else "free"
 
-        # FIXED: Enforce accurate subscription package ceilings and custom messaging
-        max_allowed_chats = 5  # Default Free Tier
+        # Enforce accurate subscription package ceilings and custom messaging
+        max_allowed_chats = 5  
         limit_message = "Daily limit reached. Upgrade to Pro!"
         
         if user_tier == "tier_199":
@@ -138,7 +138,7 @@ async def chat_handler(data: ChatRequest):
             max_allowed_chats = 150
             limit_message = "Your limit per day is over. Upgrade your plan to get more daily questions!"
         elif user_tier in ["tier_49", "admin"]:
-            max_allowed_chats = 999999  # Unlimited day usage
+            max_allowed_chats = 999999  
 
         # Enforce subscription cap barriers dynamically
         if user_tier not in ["admin", "tier_49"] and chats_today >= max_allowed_chats:
@@ -150,11 +150,34 @@ async def chat_handler(data: ChatRequest):
         # Handle empty/blank queries smoothly
         clean_question = data.question.strip() if data.question else ""
         
+        # --- NEW: CONTEXT-AWARE DATABASE SEARCH ---
+        search_query = clean_question
+        
+        # If it's a short follow up, attach the previous question to the search vector
+        if data.history and len(clean_question.split()) < 10:
+            last_user_question = ""
+            for msg in reversed(data.history):
+                if msg.get("role") == "user":
+                    last_user_question = msg.get("content", "")
+                    break
+            
+            if last_user_question:
+                search_query = f"{last_user_question} {clean_question}"
+        
+        # Pass the enriched search query to the database
         context = get_context(
-            clean_question if clean_question else "textbook page",
+            search_query if search_query else "textbook page",
             data.subject,
             data.grade_level
         )
+
+        # Process history array into proper LangChain message objects for continuity
+        formatted_history = []
+        for msg in data.history:
+            if msg.get("role") == "user":
+                formatted_history.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("role") == "assistant":
+                formatted_history.append(AIMessage(content=msg.get("content", "")))
 
         # ==================================
         # IMAGE OCR FLOW
@@ -188,16 +211,18 @@ INSTRUCTIONS:
 - Keep it easy for students
 """
             user_msg = clean_question if clean_question else "Explain this image contents."
-            messages = [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)]
+            # Inject history into the prompt stream
+            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=user_msg)]
 
         # ==================================
         # NORMAL TEXT FLOW
         # ==================================
         else:
             system_prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)
-            messages = [SystemMessage(content=system_prompt), HumanMessage(content=clean_question)]
+            # Inject history into the prompt stream
+            messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=clean_question)]
 
-        # Call LLM Engine with absolute type safety
+        # Call LLM Engine
         response = deepseek_llm.invoke(messages)
         ai_response_text = response.content if response and response.content else "No response generated."
 
@@ -280,9 +305,11 @@ async def generate_quiz(data: QuizRequest):
 # 6. SERVER
 # ==========================================
 
+# Application
 if __name__ == "__main__":
     uvicorn.run(
-        app,
+        "main:app",  # Fixed string format to enable reload
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000))
+        port=int(os.getenv("PORT", 8000)),
+        reload=True  # Added reload for local development testing
     )
