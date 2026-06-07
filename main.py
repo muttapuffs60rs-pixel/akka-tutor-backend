@@ -2,6 +2,7 @@ import os, io, asyncio, traceback, requests, uvicorn, easyocr
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
@@ -212,10 +213,9 @@ async def chat_handler(data: ChatRequest):
 
         # Enforce subscription cap barriers dynamically
         if user_tier not in ["admin", "tier_49_daily"] and chats_today >= max_allowed_chats:
-            return {
-                "answer": limit_message,
-                "show_paywall": True
-            }
+            async def paywall_generator():
+                yield f"__PAYWALL__{limit_message}"
+            return StreamingResponse(paywall_generator(), media_type="text/plain")
 
         # Handle empty/blank queries smoothly
         clean_question = data.question.strip() if data.question else ""
@@ -292,21 +292,25 @@ INSTRUCTIONS:
             # Inject history into the prompt stream
             messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=clean_question)]
 
-        # Call LLM Engine
-        response = deepseek_llm.invoke(messages)
-        ai_response_text = response.content if response and response.content else "No response generated."
+        # Define the streaming generator
+        async def response_generator():
+            try:
+                # Call LLM Engine and stream chunks
+                for chunk in deepseek_llm.stream(messages):
+                    if chunk.content:
+                        yield chunk.content
+                
+                # Database Counter Increment Execution (happens after successful stream finishes)
+                update_profile(
+                    data.user_id,
+                    "chats_today", 
+                    chats_today + 1
+                )
+            except Exception as stream_e:
+                print(f"Streaming Exception: {stream_e}")
+                yield f"\n\n[Error generating response: {str(stream_e)}]"
 
-        # Database Counter Increment Execution
-        update_profile(
-            data.user_id,
-            "chats_today", 
-            chats_today + 1
-        )
-
-        return {
-            "answer": ai_response_text,
-            "show_paywall": False
-        }
+        return StreamingResponse(response_generator(), media_type="text/plain")
 
     except Exception as e:
         print("--- CRITICAL SERVER EXCEPTION TRACEBACK ---")
