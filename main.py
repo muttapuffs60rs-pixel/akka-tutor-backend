@@ -375,6 +375,13 @@ async def generate_quiz(data: QuizRequest):
 # 6. SERVER
 # ==========================================
 
+@app.get("/health-load")
+async def health_load():
+    """Safe endpoint for load testing server capacity."""
+    # Simulate an average database lookup and processing latency
+    await asyncio.sleep(0.5)
+    return {"status": "ok", "message": "Load test simulated delay successful."}
+
 # Application
 if __name__ == "__main__":
     uvicorn.run(
