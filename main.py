@@ -1,4 +1,4 @@
-import os, io, asyncio, traceback, requests, uvicorn, easyocr
+import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -72,6 +72,7 @@ class QuizResponse(BaseModel):
 # 3. HELPERS
 # ==========================================
 
+@functools.lru_cache(maxsize=1000)
 def get_context(query: str, subject: str, grade: int,
                 threshold=0.2, count=3):
     try:
@@ -161,10 +162,32 @@ def update_profile(user_id: str, field: str, value: int):
 @app.post("/ask")
 async def chat_handler(data: ChatRequest):
     try:
-        # Fetch user profile attributes safely
+        # Prepare context search query early
+        clean_question = data.question.strip() if data.question else ""
+        search_query = clean_question
+        if data.history and len(clean_question.split()) < 10:
+            last_user_question = ""
+            for msg in reversed(data.history):
+                if msg.get("role") == "user":
+                    last_user_question = msg.get("content", "")
+                    break
+            if last_user_question:
+                search_query = f"{last_user_question} {clean_question}"
+
+        # 1. Fire Profile Fetch and Context Fetch concurrently
         def fetch_profile():
             return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", data.user_id).execute()
-        profile_res = await asyncio.to_thread(fetch_profile)
+        
+        profile_task = asyncio.create_task(asyncio.to_thread(fetch_profile))
+        
+        context_task = asyncio.create_task(asyncio.to_thread(
+            get_context,
+            search_query if search_query else "textbook page",
+            data.subject,
+            data.grade_level
+        ))
+
+        profile_res = await profile_task
         if not profile_res.data:
             raise HTTPException(status_code=404, detail="User profile not found")
         
@@ -192,7 +215,7 @@ async def chat_handler(data: ChatRequest):
                 user_tier = prev_tier if prev_tier else "free"
                 prev_tier = None
             
-            # Force the update in DB so we are in sync
+            # Force the update in DB so we are in sync (fire and forget)
             def update_lazy_reset():
                 supabase.table("profiles").update({
                     "chats_today": chats_today,
@@ -200,7 +223,7 @@ async def chat_handler(data: ChatRequest):
                     "previous_tier": prev_tier,
                     "last_active_date": today_str
                 }).eq("id", data.user_id).execute()
-            await asyncio.to_thread(update_lazy_reset)
+            asyncio.create_task(asyncio.to_thread(update_lazy_reset))
 
         # Enforce accurate subscription package ceilings and custom messaging
         max_allowed_chats = 5  
@@ -221,30 +244,8 @@ async def chat_handler(data: ChatRequest):
                 yield f"__PAYWALL__{limit_message}"
             return StreamingResponse(paywall_generator(), media_type="text/plain")
 
-        # Handle empty/blank queries smoothly
-        clean_question = data.question.strip() if data.question else ""
-        
-        # --- NEW: CONTEXT-AWARE DATABASE SEARCH ---
-        search_query = clean_question
-        
-        # If it's a short follow up, attach the previous question to the search vector
-        if data.history and len(clean_question.split()) < 10:
-            last_user_question = ""
-            for msg in reversed(data.history):
-                if msg.get("role") == "user":
-                    last_user_question = msg.get("content", "")
-                    break
-            
-            if last_user_question:
-                search_query = f"{last_user_question} {clean_question}"
-        
-        # Pass the enriched search query to the database
-        context = await asyncio.to_thread(
-            get_context,
-            search_query if search_query else "textbook page",
-            data.subject,
-            data.grade_level
-        )
+        # 2. Wait for context task only after user passed the paywall
+        context = await context_task
 
         # Process history array into proper LangChain message objects for continuity
         formatted_history = []
@@ -307,12 +308,12 @@ INSTRUCTIONS:
                         yield chunk.content
                 
                 # Database Counter Increment Execution (happens after successful stream finishes)
-                await asyncio.to_thread(
+                asyncio.create_task(asyncio.to_thread(
                     update_profile,
                     data.user_id,
                     "chats_today", 
                     chats_today + 1
-                )
+                ))
             except Exception as stream_e:
                 print(f"Streaming Exception: {stream_e}")
                 yield f"\n\n[Error generating response: {str(stream_e)}]"
@@ -371,12 +372,12 @@ async def generate_quiz(data: QuizRequest):
             "context": context
         })
 
-        await asyncio.to_thread(
+        asyncio.create_task(asyncio.to_thread(
             update_profile,
             data.user_id,
             "quizzes_today",
             quizzes_today + 1
-        )
+        ))
 
         return quiz_data
 
