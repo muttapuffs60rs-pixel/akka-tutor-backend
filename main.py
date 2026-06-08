@@ -162,7 +162,9 @@ def update_profile(user_id: str, field: str, value: int):
 async def chat_handler(data: ChatRequest):
     try:
         # Fetch user profile attributes safely
-        profile_res = supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", data.user_id).execute()
+        def fetch_profile():
+            return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", data.user_id).execute()
+        profile_res = await asyncio.to_thread(fetch_profile)
         if not profile_res.data:
             raise HTTPException(status_code=404, detail="User profile not found")
         
@@ -191,12 +193,14 @@ async def chat_handler(data: ChatRequest):
                 prev_tier = None
             
             # Force the update in DB so we are in sync
-            supabase.table("profiles").update({
-                "chats_today": chats_today,
-                "subscription_tier": user_tier,
-                "previous_tier": prev_tier,
-                "last_active_date": today_str
-            }).eq("id", data.user_id).execute()
+            def update_lazy_reset():
+                supabase.table("profiles").update({
+                    "chats_today": chats_today,
+                    "subscription_tier": user_tier,
+                    "previous_tier": prev_tier,
+                    "last_active_date": today_str
+                }).eq("id", data.user_id).execute()
+            await asyncio.to_thread(update_lazy_reset)
 
         # Enforce accurate subscription package ceilings and custom messaging
         max_allowed_chats = 5  
@@ -235,7 +239,8 @@ async def chat_handler(data: ChatRequest):
                 search_query = f"{last_user_question} {clean_question}"
         
         # Pass the enriched search query to the database
-        context = get_context(
+        context = await asyncio.to_thread(
+            get_context,
             search_query if search_query else "textbook page",
             data.subject,
             data.grade_level
@@ -254,9 +259,10 @@ async def chat_handler(data: ChatRequest):
         # ==================================
         if data.image_url and data.image_url.strip():
             await asyncio.sleep(1)
-            image = requests.get(data.image_url, timeout=15)
+            image = await asyncio.to_thread(requests.get, data.image_url, timeout=15)
 
-            extracted = ocr_reader.readtext(
+            extracted = await asyncio.to_thread(
+                ocr_reader.readtext,
                 image.content,
                 detail=0,
                 paragraph=True
@@ -296,12 +302,13 @@ INSTRUCTIONS:
         async def response_generator():
             try:
                 # Call LLM Engine and stream chunks
-                for chunk in deepseek_llm.stream(messages):
+                async for chunk in deepseek_llm.astream(messages):
                     if chunk.content:
                         yield chunk.content
                 
                 # Database Counter Increment Execution (happens after successful stream finishes)
-                update_profile(
+                await asyncio.to_thread(
+                    update_profile,
                     data.user_id,
                     "chats_today", 
                     chats_today + 1
@@ -324,7 +331,7 @@ INSTRUCTIONS:
 @app.post("/generate-quiz")
 async def generate_quiz(data: QuizRequest):
     try:
-        quizzes_today = get_profile(data.user_id, "quizzes_today")
+        quizzes_today = await asyncio.to_thread(get_profile, data.user_id, "quizzes_today")
 
         if quizzes_today >= 5:
             raise HTTPException(
@@ -334,7 +341,8 @@ async def generate_quiz(data: QuizRequest):
 
         search_query = f"{data.subject} Units: {', '.join(data.units)}"
 
-        context = get_context(
+        context = await asyncio.to_thread(
+            get_context,
             search_query,
             data.subject,
             data.grade_level,
@@ -358,12 +366,13 @@ async def generate_quiz(data: QuizRequest):
             | deepseek_llm.with_structured_output(QuizResponse)
         )
 
-        quiz_data = chain.invoke({
+        quiz_data = await chain.ainvoke({
             "num": data.num_questions,
             "context": context
         })
 
-        update_profile(
+        await asyncio.to_thread(
+            update_profile,
             data.user_id,
             "quizzes_today",
             quizzes_today + 1
