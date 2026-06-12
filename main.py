@@ -1,7 +1,8 @@
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools
 from typing import List, Optional
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -11,6 +12,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT, AKKA_QUIZ_PROMPT
+import razorpay
 
 # ==========================================
 # 1. SETUP
@@ -34,6 +36,15 @@ deepseek_llm = ChatDeepSeek(
 
 ocr_reader = easyocr.Reader(['en'], gpu=False)
 
+try:
+    razorpay_client = razorpay.Client(auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_KEY_SECRET")))
+    razorpay_client.session.verify = False
+    import urllib3
+    urllib3.disable_warnings()
+except Exception as e:
+    print(f"Failed to initialize Razorpay: {e}")
+    razorpay_client = None
+
 app = FastAPI(title="Akka Tutor API")
 
 app.add_middleware(
@@ -49,7 +60,6 @@ app.add_middleware(
 # ==========================================
 
 class ChatRequest(BaseModel):
-    user_id: str
     question: str
     subject: str
     grade_level: int
@@ -57,7 +67,6 @@ class ChatRequest(BaseModel):
     history: List[dict] = []  # FIXED: Added history back so the backend accepts Flutter's memory payload
 
 class QuizRequest(BaseModel):
-    user_id: str
     subject: str
     units: List[str]
     grade_level: int
@@ -67,6 +76,36 @@ class QuizResponse(BaseModel):
     questions: List[dict] = Field(
         description="List of MCQs with question, options, and answer"
     )
+
+class OrderRequest(BaseModel):
+    tier_id: str
+
+class VerifyPaymentRequest(BaseModel):
+    razorpay_payment_id: str
+    razorpay_order_id: str
+    razorpay_signature: str
+
+
+# ==========================================
+# 2.5. SECURITY
+# ==========================================
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    try:
+        user_resp = supabase.auth.get_user(token)
+        if not user_resp or not user_resp.user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_resp.user.id
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+TIER_PRICES = {
+    "tier_49_daily": {"amount": 49, "days": 1},
+    "tier_199": {"amount": 199, "days": 30},
+    "tier_499": {"amount": 499, "days": 30}
+}
 
 # ==========================================
 # 3. HELPERS
@@ -160,7 +199,7 @@ def update_profile(user_id: str, field: str, value: int):
 # ==========================================
 
 @app.post("/ask")
-async def chat_handler(data: ChatRequest):
+async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_user)):
     try:
         # Prepare context search query early
         clean_question = data.question.strip() if data.question else ""
@@ -176,7 +215,7 @@ async def chat_handler(data: ChatRequest):
 
         # 1. Fire Profile Fetch and Context Fetch concurrently
         def fetch_profile():
-            return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", data.user_id).execute()
+            return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", user_id).execute()
         
         profile_task = asyncio.create_task(asyncio.to_thread(fetch_profile))
         
@@ -222,7 +261,7 @@ async def chat_handler(data: ChatRequest):
                     "subscription_tier": user_tier,
                     "previous_tier": prev_tier,
                     "last_active_date": today_str
-                }).eq("id", data.user_id).execute()
+                }).eq("id", user_id).execute()
             asyncio.create_task(asyncio.to_thread(update_lazy_reset))
 
         # Enforce accurate subscription package ceilings and custom messaging
@@ -310,7 +349,7 @@ INSTRUCTIONS:
                 # Database Counter Increment Execution (happens after successful stream finishes)
                 asyncio.create_task(asyncio.to_thread(
                     update_profile,
-                    data.user_id,
+                    user_id,
                     "chats_today", 
                     chats_today + 1
                 ))
@@ -330,9 +369,9 @@ INSTRUCTIONS:
 # ==========================================
 
 @app.post("/generate-quiz")
-async def generate_quiz(data: QuizRequest):
+async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_user)):
     try:
-        quizzes_today = await asyncio.to_thread(get_profile, data.user_id, "quizzes_today")
+        quizzes_today = await asyncio.to_thread(get_profile, user_id, "quizzes_today")
 
         if quizzes_today >= 5:
             raise HTTPException(
@@ -374,7 +413,7 @@ async def generate_quiz(data: QuizRequest):
 
         asyncio.create_task(asyncio.to_thread(
             update_profile,
-            data.user_id,
+            user_id,
             "quizzes_today",
             quizzes_today + 1
         ))
@@ -386,7 +425,97 @@ async def generate_quiz(data: QuizRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==========================================
-# 6. SERVER
+# 6. PAYMENTS
+# ==========================================
+
+@app.post("/create-order")
+async def create_order(req: OrderRequest, user_id: str = Depends(get_current_user)):
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured")
+    try:
+        tier_info = TIER_PRICES.get(req.tier_id)
+        if not tier_info:
+            raise HTTPException(status_code=400, detail="Invalid tier_id")
+            
+        order_amount = tier_info['amount'] * 100 # convert to paise
+        order_currency = 'INR'
+        order_receipt = f'rcpt_{user_id[:8]}'
+        notes = {'tier_id': req.tier_id, 'user_id': user_id}
+        
+        response = razorpay_client.order.create(dict(amount=order_amount, currency=order_currency, receipt=order_receipt, notes=notes))
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/verify-payment")
+async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(get_current_user)):
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured")
+    try:
+        # Verify Signature
+        params_dict = {
+            'razorpay_order_id': req.razorpay_order_id,
+            'razorpay_payment_id': req.razorpay_payment_id,
+            'razorpay_signature': req.razorpay_signature
+        }
+        
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # Fetch order from Razorpay to get the trusted tier_id and user_id
+        order = razorpay_client.order.fetch(req.razorpay_order_id)
+        notes = order.get('notes', {})
+        
+        tier_id = notes.get('tier_id')
+        order_user_id = notes.get('user_id')
+        
+        if order_user_id != auth_user_id:
+            raise HTTPException(status_code=403, detail="Order user mismatch")
+            
+        tier_info = TIER_PRICES.get(tier_id)
+        if not tier_info:
+            raise HTTPException(status_code=400, detail="Invalid tier in order notes")
+            
+        # Payment is verified, update the user's subscription
+        from datetime import datetime, timedelta
+        
+        if tier_id == 'tier_49_daily':
+            now = datetime.now()
+            expiry = datetime(now.year, now.month, now.day, 23, 59, 59)
+        else:
+            expiry = datetime.now() + timedelta(days=tier_info['days'])
+            
+        expiry_date = expiry.isoformat()
+        
+        # Fetch current profile
+        res = supabase.table('profiles').select('subscription_tier, previous_tier').eq('id', auth_user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        current_tier = res.data[0].get('subscription_tier', 'free')
+        previous_tier = res.data[0].get('previous_tier')
+        
+        if tier_id == 'tier_49_daily' and current_tier != 'tier_49_daily' and current_tier != 'free':
+            previous_tier = current_tier
+            
+        if tier_id != 'tier_49_daily':
+            previous_tier = None
+            
+        supabase.table('profiles').update({
+            'subscription_tier': tier_id,
+            'subscription_expires_at': expiry_date,
+            'previous_tier': previous_tier
+        }).eq('id', auth_user_id).execute()
+        
+        return {"status": "success", "message": "Payment verified and subscription updated"}
+        
+    except razorpay.errors.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid Payment Signature")
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# 7. SERVER
 # ==========================================
 
 @app.get("/health-load")
