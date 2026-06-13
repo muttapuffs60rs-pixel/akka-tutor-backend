@@ -1,5 +1,5 @@
 # pyrefly: ignore [missing-import]
-import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64
+import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Security
@@ -579,7 +579,219 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==========================================
-# 7. SERVER
+# 7. LIVE QUIZ
+# ==========================================
+
+class LiveQuizCreate(BaseModel):
+    title: str
+    questions: List[dict]
+
+class StudentAnswerRequest(BaseModel):
+    question_id: str
+    submitted_answer: str
+    student_name: str
+
+def _generate_session_code() -> str:
+    """Generate a unique 6-char alphanumeric code, retried on collision."""
+    chars = string.ascii_uppercase + string.digits
+    for _ in range(10):
+        code = ''.join(random.choices(chars, k=6))
+        existing = supabase.table('quiz_sessions').select('id').eq('session_code', code).execute()
+        if not existing.data:
+            return code
+    raise RuntimeError("Could not generate unique session code")
+
+@app.post("/live-quiz/create")
+async def create_live_quiz(data: LiveQuizCreate, teacher_id: str = Depends(get_current_user)):
+    try:
+        session_code = _generate_session_code()
+        session = supabase.table('quiz_sessions').insert({
+            'session_code': session_code,
+            'teacher_id': teacher_id,
+            'title': data.title,
+            'status': 'waiting',
+            'current_question_index': -1
+        }).execute()
+        session_id = session.data[0]['id']
+
+        questions = []
+        for i, q in enumerate(data.questions):
+            questions.append({
+                'session_id': session_id,
+                'question_text': q['question_text'],
+                'question_type': q['question_type'],
+                'options': q.get('options'),
+                'correct_answer': q['correct_answer'],
+                'points': q.get('points', 1),
+                'sort_order': q.get('sort_order', i)
+            })
+        supabase.table('quiz_questions').insert(questions).execute()
+
+        return {
+            'session_id': session_id,
+            'session_code': session_code,
+            'title': data.title,
+            'question_count': len(data.questions)
+        }
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/live-quiz/{code}")
+async def get_live_quiz(code: str, user_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('*').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        s = session.data[0]
+        is_teacher = s['teacher_id'] == user_id
+
+        questions_res = supabase.table('quiz_questions').select('*').eq('session_id', s['id']).order('sort_order').execute()
+        q_list = []
+        for q in questions_res.data:
+            item = {k: q[k] for k in ('id', 'question_text', 'question_type', 'options', 'sort_order', 'points')}
+            if is_teacher:
+                item['correct_answer'] = q['correct_answer']
+            q_list.append(item)
+
+        return {**s, 'questions': q_list, 'is_teacher': is_teacher}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/live-quiz/{code}/start")
+async def start_live_quiz(code: str, teacher_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('id,teacher_id,status').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        s = session.data[0]
+        if s['teacher_id'] != teacher_id:
+            raise HTTPException(status_code=403, detail="Only the teacher can start this quiz")
+        if s['status'] != 'waiting':
+            raise HTTPException(status_code=400, detail="Quiz already started")
+        supabase.table('quiz_sessions').update({
+            'status': 'active', 'current_question_index': 0
+        }).eq('id', s['id']).execute()
+        return {"status": "active", "current_question_index": 0}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/live-quiz/{code}/next")
+async def next_question(code: str, teacher_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('id,teacher_id,status,current_question_index').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        s = session.data[0]
+        if s['teacher_id'] != teacher_id:
+            raise HTTPException(status_code=403, detail="Only the teacher can advance the quiz")
+        if s['status'] != 'active':
+            raise HTTPException(status_code=400, detail="Quiz is not active")
+
+        q_count = supabase.table('quiz_questions').select('id', count='exact').eq('session_id', s['id']).execute()
+        total = q_count.count or 0
+        next_index = s['current_question_index'] + 1
+
+        if next_index >= total:
+            supabase.table('quiz_sessions').update({
+                'status': 'completed', 'current_question_index': next_index
+            }).eq('id', s['id']).execute()
+            return {"status": "completed", "current_question_index": next_index}
+
+        supabase.table('quiz_sessions').update({'current_question_index': next_index}).eq('id', s['id']).execute()
+        return {"status": "active", "current_question_index": next_index}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/live-quiz/{code}/complete")
+async def complete_live_quiz(code: str, teacher_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('id,teacher_id').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        s = session.data[0]
+        if s['teacher_id'] != teacher_id:
+            raise HTTPException(status_code=403, detail="Only the teacher can end this quiz")
+        supabase.table('quiz_sessions').update({'status': 'completed'}).eq('id', s['id']).execute()
+        return {"status": "completed"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/live-quiz/{code}/answer")
+async def submit_answer(code: str, data: StudentAnswerRequest, student_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('id,status,current_question_index').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        s = session.data[0]
+        if s['status'] != 'active':
+            raise HTTPException(status_code=400, detail="Quiz is not active")
+
+        question = supabase.table('quiz_questions').select('correct_answer,question_type,sort_order').eq('id', data.question_id).execute()
+        if not question.data:
+            raise HTTPException(status_code=404, detail="Question not found")
+        q = question.data[0]
+
+        if q['sort_order'] != s['current_question_index']:
+            raise HTTPException(status_code=400, detail="This question is not currently active")
+
+        submitted = data.submitted_answer.strip()
+        correct = q['correct_answer'].strip()
+        if q['question_type'] == 'fill_blank':
+            is_correct = submitted.lower() == correct.lower()
+        else:
+            is_correct = submitted == correct
+
+        try:
+            supabase.table('quiz_responses').insert({
+                'session_id': s['id'],
+                'student_id': student_id,
+                'student_name': data.student_name,
+                'question_id': data.question_id,
+                'submitted_answer': submitted,
+                'is_correct': is_correct
+            }).execute()
+        except Exception:
+            raise HTTPException(status_code=409, detail="Already answered this question")
+
+        return {"is_correct": is_correct, "correct_answer": correct}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/live-quiz/{code}/leaderboard")
+async def get_leaderboard(code: str, user_id: str = Depends(get_current_user)):
+    try:
+        session = supabase.table('quiz_sessions').select('id').eq('session_code', code.upper()).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        result = supabase.rpc('get_session_leaderboard', {'target_session_id': session.data[0]['id']}).execute()
+        return {"leaderboard": result.data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# 8. SERVER
 # ==========================================
 
 @app.get("/health-load")
