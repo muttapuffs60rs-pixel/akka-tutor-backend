@@ -532,15 +532,22 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
             raise HTTPException(status_code=400, detail="Invalid tier in order notes")
             
         # Payment is verified, update the user's subscription
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
+        
+        # IST = UTC + 5:30
+        IST = timezone(timedelta(hours=5, minutes=30))
+        now_ist = datetime.now(IST)
         
         if tier_id == 'tier_49_daily':
-            now = datetime.now()
-            expiry = datetime(now.year, now.month, now.day, 23, 59, 59)
+            # Expires at 11:59:59 PM IST today
+            expiry = now_ist.replace(hour=23, minute=59, second=59, microsecond=0)
         else:
-            expiry = datetime.now() + timedelta(days=tier_info['days'])
+            # Monthly plans: exactly 30 days from now in IST
+            expiry = now_ist + timedelta(days=tier_info['days'])
             
-        expiry_date = expiry.isoformat()
+        start_date  = now_ist.isoformat()   # IST timestamp
+        expiry_date = expiry.isoformat()    # IST timestamp
+
         
         # Fetch current profile
         res = supabase.table('profiles').select('subscription_tier, previous_tier').eq('id', auth_user_id).execute()
@@ -558,6 +565,7 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
             
         supabase.table('profiles').update({
             'subscription_tier': tier_id,
+            'subscription_start_date': start_date,   # ← NOW SAVED
             'subscription_expires_at': expiry_date,
             'previous_tier': previous_tier
         }).eq('id', auth_user_id).execute()
