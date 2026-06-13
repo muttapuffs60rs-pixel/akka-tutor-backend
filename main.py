@@ -1,4 +1,5 @@
-import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools
+# pyrefly: ignore [missing-import]
+import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Security
@@ -8,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
 from langchain_deepseek import ChatDeepSeek
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -32,6 +34,12 @@ embeddings = HuggingFaceEmbeddings(
 deepseek_llm = ChatDeepSeek(
     model="deepseek-v4-flash",
     api_key=os.getenv("DEEPSEEK_API_KEY")
+)
+
+# Gemini Flash Vision — used as fallback when OCR yields < 10 words (graphs/diagrams)
+gemini_vision = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
 ocr_reader = easyocr.Reader(['en'], gpu=False)
@@ -113,7 +121,7 @@ TIER_PRICES = {
 
 @functools.lru_cache(maxsize=1000)
 def get_context(query: str, subject: str, grade: int,
-                threshold=0.2, count=3):
+                threshold=0.1, count=5):
     try:
         import re
         chunks = []
@@ -213,6 +221,64 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
             if last_user_question:
                 search_query = f"{last_user_question} {clean_question}"
 
+        extracted_text = None
+        image_bytes = None
+        image_mime = "image/jpeg"
+        used_vision_model = False
+
+        if data.image_url and data.image_url.strip():
+            await asyncio.sleep(1)
+            image_resp = await asyncio.to_thread(requests.get, data.image_url, timeout=15)
+            image_bytes = image_resp.content
+
+            # Detect MIME type from Content-Type header (fallback to jpeg)
+            content_type = image_resp.headers.get("Content-Type", "")
+            if "png" in content_type:
+                image_mime = "image/png"
+            elif "webp" in content_type:
+                image_mime = "image/webp"
+
+            # --- Step 1: Try EasyOCR (fast, good for text-heavy images) ---
+            extracted = await asyncio.to_thread(
+                ocr_reader.readtext,
+                image_bytes,
+                detail=0,
+                paragraph=True
+            )
+            ocr_text = " ".join(extracted).strip() if extracted else ""
+
+            # --- Step 2: Hybrid fallback — if OCR yields < 10 words, use Gemini Vision ---
+            # Graphs, diagrams, and handwritten math return very little OCR text.
+            if len(ocr_text.split()) < 10:
+                print(f"[Vision] OCR too sparse ({len(ocr_text.split())} words). Switching to Gemini Vision.")
+                used_vision_model = True
+                b64_image = base64.b64encode(image_bytes).decode("utf-8")
+                vision_prompt = [
+                    HumanMessage(content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{image_mime};base64,{b64_image}"}
+                        },
+                        {
+                            "type": "text",
+                            "text": (
+                                "You are an expert at reading Tamil Nadu State Board school textbook questions. "
+                                "Describe the image in detail: include all text, labels, graph shapes, axes, and any visual elements. "
+                                "If there are multiple sub-graphs (i), (ii), (iii), etc., describe each one separately. "
+                                "Be precise and thorough so another AI can answer the student's question."
+                            )
+                        }
+                    ])
+                ]
+                vision_response = await asyncio.to_thread(gemini_vision.invoke, vision_prompt)
+                extracted_text = vision_response.content
+                print(f"[Vision] Gemini description: {extracted_text[:200]}...")
+            else:
+                extracted_text = ocr_text
+                print(f"[OCR] Extracted {len(ocr_text.split())} words from image.")
+
+            search_query = f"{search_query} {extracted_text}"
+
         # 1. Fire Profile Fetch and Context Fetch concurrently
         def fetch_profile():
             return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", user_id).execute()
@@ -221,7 +287,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
         
         context_task = asyncio.create_task(asyncio.to_thread(
             get_context,
-            search_query if search_query else "textbook page",
+            search_query if search_query.strip() else "textbook page",
             data.subject,
             data.grade_level
         ))
@@ -295,30 +361,12 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
                 formatted_history.append(AIMessage(content=msg.get("content", "")))
 
         # ==================================
-        # IMAGE OCR FLOW
+        # PROMPT CONSTRUCTION
         # ==================================
-        if data.image_url and data.image_url.strip():
-            await asyncio.sleep(1)
-            image = await asyncio.to_thread(requests.get, data.image_url, timeout=15)
-
-            extracted = await asyncio.to_thread(
-                ocr_reader.readtext,
-                image.content,
-                detail=0,
-                paragraph=True
-            )
-
-            extracted_text = " ".join(extracted) if extracted else "No readable text found."
-
+        if extracted_text is not None:
             system_prompt = f"""
 SYSTEM:
 {AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)}
-
-TEXTBOOK IMAGE TEXT:
-\"\"\"{extracted_text}\"\"\"
-
-STUDENT QUESTION:
-{clean_question if clean_question else "Explain the concepts shown in this textbook image section."}
 
 INSTRUCTIONS:
 - Explain clearly in Tanglish
@@ -326,7 +374,15 @@ INSTRUCTIONS:
 - Give point-wise answers
 - Keep it easy for students
 """
-            user_msg = clean_question if clean_question else "Explain this image contents."
+            # Tailor the user message based on whether Gemini Vision described the image
+            if used_vision_model:
+                user_msg = (
+                    f"I uploaded an image. A vision AI described its contents as follows:\n\n"
+                    f"{extracted_text}\n\n"
+                    f"Based on this description, my question is: {clean_question if clean_question else 'Please explain what is shown in this image.'}"
+                )
+            else:
+                user_msg = f"I have uploaded a new image. Here is the text extracted from it:\n\n{extracted_text}\n\nMy question is: {clean_question if clean_question else 'Please explain the contents of this new image.'}"
             # Inject history into the prompt stream
             messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=user_msg)]
 
