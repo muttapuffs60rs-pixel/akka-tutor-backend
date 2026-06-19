@@ -60,13 +60,15 @@ CREATE INDEX IF NOT EXISTS idx_quiz_responses_session
 -- ─── 4. LEADERBOARD RPC ──────────────────────────────
 -- Called by GET /live-quiz/{code}/leaderboard
 -- Returns students ranked by correct answers for a given session
+DROP FUNCTION IF EXISTS get_session_leaderboard(UUID);
+
 CREATE OR REPLACE FUNCTION get_session_leaderboard(target_session_id UUID)
-RETURNS TABLE(student_name TEXT, total_score BIGINT) AS $$
+RETURNS TABLE(student_name TEXT, total_score NUMERIC) AS $$
 BEGIN
     RETURN QUERY
     SELECT
         qr.student_name::TEXT,
-        COUNT(*) FILTER (WHERE qr.is_correct = true) AS total_score
+        SUM(CASE WHEN qr.is_correct THEN 1 ELSE -0.5 END)::NUMERIC AS total_score
     FROM quiz_responses qr
     WHERE qr.session_id = target_session_id
     GROUP BY qr.student_id, qr.student_name
@@ -95,6 +97,19 @@ BEGIN
         ALTER PUBLICATION supabase_realtime ADD TABLE quiz_responses;
     END IF;
 END $$;
+
+
+-- ─── 6. PROFILE UPDATES ──────────────────────────────
+CREATE OR REPLACE FUNCTION increment_profile_field(target_user_id UUID, field_name TEXT)
+RETURNS void AS $$
+BEGIN
+    IF field_name = 'chats_today' THEN
+        UPDATE profiles SET chats_today = COALESCE(chats_today, 0) + 1 WHERE id = target_user_id;
+    ELSIF field_name = 'quizzes_today' THEN
+        UPDATE profiles SET quizzes_today = COALESCE(quizzes_today, 0) + 1 WHERE id = target_user_id;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ─── 6. ROW LEVEL SECURITY ───────────────────────────

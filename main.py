@@ -202,6 +202,15 @@ def update_profile(user_id: str, field: str, value: int):
         field: int(value)
     }).eq("id", user_id).execute()
 
+def increment_profile(user_id: str, field: str):
+    try:
+        supabase.rpc("increment_profile_field", {
+            "target_user_id": user_id,
+            "field_name": field
+        }).execute()
+    except Exception as e:
+        print(f"Error incrementing {field}: {e}")
+
 # ==========================================
 # 4. CHAT ROUTE
 # ==========================================
@@ -404,10 +413,9 @@ INSTRUCTIONS:
                 
                 # Database Counter Increment Execution (happens after successful stream finishes)
                 asyncio.create_task(asyncio.to_thread(
-                    update_profile,
+                    increment_profile,
                     user_id,
-                    "chats_today", 
-                    chats_today + 1
+                    "chats_today"
                 ))
             except Exception as stream_e:
                 print(f"Streaming Exception: {stream_e}")
@@ -467,11 +475,11 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
             "context": context
         })
 
+        # Database Counter Increment
         asyncio.create_task(asyncio.to_thread(
-            update_profile,
+            increment_profile,
             user_id,
-            "quizzes_today",
-            quizzes_today + 1
+            "quizzes_today"
         ))
 
         return quiz_data
