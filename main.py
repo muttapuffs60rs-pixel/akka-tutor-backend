@@ -612,6 +612,52 @@ def _generate_session_code() -> str:
 @app.post("/live-quiz/create")
 async def create_live_quiz(data: LiveQuizCreate, teacher_id: str = Depends(get_current_user)):
     try:
+        # Check subscription details for free tier limit checks
+        profile_res = supabase.table("profiles").select("subscription_tier").eq("id", teacher_id).execute()
+        if not profile_res.data:
+            raise HTTPException(status_code=404, detail="Teacher profile not found")
+        
+        user_tier = str(profile_res.data[0].get("subscription_tier", "free")).strip().lower()
+        if user_tier != "admin":
+            from datetime import datetime, timedelta
+            ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+            
+            if user_tier == "free":
+                # Count quizzes created by this teacher in the current calendar month (IST)
+                first_day = ist_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                first_day_iso = first_day.strftime('%Y-%m-%dT%H:%M:%S+05:30')
+                
+                existing = supabase.table('quiz_sessions')\
+                    .select('id', count='exact')\
+                    .eq('teacher_id', teacher_id)\
+                    .gte('created_at', first_day_iso)\
+                    .execute()
+                
+                created_count = existing.count or 0
+                if created_count >= 1:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Unpaid users can only host 1 live quiz per month. Upgrade to Pro for unlimited hosting!"
+                    )
+            elif user_tier in ["tier_199", "tier_499"]:
+                # Count quizzes created by this teacher today in IST
+                limit = 3 if user_tier == "tier_199" else 5
+                start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
+                start_of_today_iso = start_of_today.strftime('%Y-%m-%dT%H:%M:%S+05:30')
+                
+                existing = supabase.table('quiz_sessions')\
+                    .select('id', count='exact')\
+                    .eq('teacher_id', teacher_id)\
+                    .gte('created_at', start_of_today_iso)\
+                    .execute()
+                
+                created_count = existing.count or 0
+                if created_count >= limit:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"As a {user_tier.replace('_', ' ').title()} user, you can only host {limit} live quizzes per day. Upgrade plan to increase limits!"
+                    )
+
         session_code = _generate_session_code()
         session = supabase.table('quiz_sessions').insert({
             'session_code': session_code,
@@ -654,6 +700,58 @@ async def get_live_quiz(code: str, user_id: str = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="Session not found")
         s = session.data[0]
         is_teacher = s['teacher_id'] == user_id
+
+        # Check student participation limit
+        if not is_teacher:
+            profile_res = supabase.table("profiles").select("subscription_tier").eq("id", user_id).execute()
+            if not profile_res.data:
+                raise HTTPException(status_code=404, detail="Student profile not found")
+            
+            user_tier = str(profile_res.data[0].get("subscription_tier", "free")).strip().lower()
+            if user_tier != 'admin':
+                from datetime import datetime, timedelta
+                ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+                
+                if user_tier == "free":
+                    first_day = ist_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                    first_day_iso = first_day.strftime('%Y-%m-%dT%H:%M:%S+05:30')
+                    
+                    # Fetch all responses by this student this month
+                    existing_responses = supabase.table('quiz_responses')\
+                        .select('session_id')\
+                        .eq('student_id', user_id)\
+                        .gte('created_at', first_day_iso)\
+                        .execute()
+                    
+                    # Get unique session IDs
+                    unique_session_ids = {r['session_id'] for r in existing_responses.data} if existing_responses.data else set()
+                    
+                    # If they haven't joined this session yet and have already used their 3 free slots
+                    if s['id'] not in unique_session_ids and len(unique_session_ids) >= 3:
+                        raise HTTPException(
+                            status_code=403,
+                            detail="Unpaid users can only participate in 3 live quizzes per month. Upgrade to Pro for unlimited access!"
+                        )
+                elif user_tier in ["tier_199", "tier_499"]:
+                    # Paid users: daily unique session limits
+                    limit = 10 if user_tier == "tier_199" else 15
+                    start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
+                    start_of_today_iso = start_of_today.strftime('%Y-%m-%dT%H:%M:%S+05:30')
+                    
+                    # Fetch all responses by this student today
+                    existing_responses = supabase.table('quiz_responses')\
+                        .select('session_id')\
+                        .eq('student_id', user_id)\
+                        .gte('created_at', start_of_today_iso)\
+                        .execute()
+                    
+                    unique_session_ids = {r['session_id'] for r in existing_responses.data} if existing_responses.data else set()
+                    
+                    if s['id'] not in unique_session_ids and len(unique_session_ids) >= limit:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"As a {user_tier.replace('_', ' ').title()} user, you can only participate in {limit} unique live quizzes per day. Upgrade plan to increase limits!"
+                        )
 
         questions_res = supabase.table('quiz_questions').select('*').eq('session_id', s['id']).order('sort_order').execute()
         q_list = []

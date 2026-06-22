@@ -61,6 +61,12 @@ CREATE POLICY "Users create own messages"
     ON chat_messages FOR INSERT TO authenticated
     WITH CHECK (auth.uid() = user_id);
 
+-- User can delete their own messages
+CREATE POLICY "Users delete own messages"
+    ON chat_messages FOR DELETE TO authenticated
+    USING (auth.uid() = user_id);
+
+
 
 -- ═══════════════════════════════════════════════════
 -- Re-confirm all other table policies (idempotent)

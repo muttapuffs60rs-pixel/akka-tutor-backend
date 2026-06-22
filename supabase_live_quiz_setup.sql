@@ -107,6 +107,8 @@ BEGIN
         UPDATE profiles SET chats_today = COALESCE(chats_today, 0) + 1 WHERE id = target_user_id;
     ELSIF field_name = 'quizzes_today' THEN
         UPDATE profiles SET quizzes_today = COALESCE(quizzes_today, 0) + 1 WHERE id = target_user_id;
+    ELSIF field_name = 'live_quizzes_joined_today' THEN
+        UPDATE profiles SET live_quizzes_joined_today = COALESCE(live_quizzes_joined_today, 0) + 1 WHERE id = target_user_id;
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
