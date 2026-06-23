@@ -126,3 +126,37 @@ LEFT JOIN pg_policies p ON p.tablename = t.tablename AND p.schemaname = 'public'
 WHERE t.schemaname = 'public'
 GROUP BY t.tablename, t.rowsecurity
 ORDER BY t.tablename;
+
+
+-- ═══════════════════════════════════════════════════
+-- AUTO-CLEANUP: Delete chats older than 2 days
+-- ═══════════════════════════════════════════════════
+
+-- 1. Create cleanup function
+CREATE OR REPLACE FUNCTION delete_old_chat_sessions()
+RETURNS void AS $$
+BEGIN
+    -- Delete messages older than 2 days
+    DELETE FROM chat_messages
+    WHERE created_at < NOW() - INTERVAL '2 days';
+
+    -- Delete chat sessions older than 2 days
+    DELETE FROM chat_sessions
+    WHERE created_at < NOW() - INTERVAL '2 days';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. Enable pg_cron extension (standard on Supabase)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- 3. Schedule job daily at midnight (safely unschedule first to avoid duplicates)
+SELECT cron.unschedule(jobid) 
+FROM cron.job 
+WHERE jobname = 'delete-old-chats-daily';
+
+SELECT cron.schedule(
+    'delete-old-chats-daily',
+    '0 0 * * *',
+    'SELECT delete_old_chat_sessions();'
+);
+
