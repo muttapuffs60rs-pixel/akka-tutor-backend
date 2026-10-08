@@ -1,6 +1,7 @@
 # pyrefly: ignore [missing-import]
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string
 from typing import List, Optional
+from uuid import UUID
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -13,7 +14,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from prompts import AKKA_TUTOR_SYSTEM_PROMPT, AKKA_QUIZ_PROMPT
+from prompts import AKKA_QUIZ_PROMPT, TUTOR_CACHE_PROMPT, build_tutor_prompt
+from image_security import download_chat_image
+from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS
+from answer_cache import AnswerCache, eligible_question
+from answer_library_api import create_answer_library_router
 import razorpay
 
 # ==========================================
@@ -33,13 +38,16 @@ embeddings = HuggingFaceEmbeddings(
 
 deepseek_llm = ChatDeepSeek(
     model="deepseek-v4-flash",
-    api_key=os.getenv("DEEPSEEK_API_KEY")
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    timeout=90, max_retries=0, stream_usage=True,
+    extra_body={"thinking": {"type": "disabled"}}
 )
 
 # Gemini Flash Vision — used as fallback when OCR yields < 10 words (graphs/diagrams)
 gemini_vision = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
-    google_api_key=os.getenv("GOOGLE_API_KEY")
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+    max_output_tokens=700, max_retries=0, timeout=90
 )
 
 ocr_reader = easyocr.Reader(['en'], gpu=False)
@@ -61,6 +69,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Answer-Source", "X-Answer-Id", "X-Chat-Turns-Used"],
 )
 
 # ==========================================
@@ -68,20 +77,28 @@ app.add_middleware(
 # ==========================================
 
 class ChatRequest(BaseModel):
-    question: str
-    subject: str
-    grade_level: int
-    image_url: Optional[str] = None
-    history: List[dict] = []  # FIXED: Added history back so the backend accepts Flutter's memory payload
+    session_id: UUID
+    question: str = Field(min_length=1, max_length=2000)
+    subject: str = Field(min_length=1, max_length=100)
+    grade_level: int = Field(ge=6, le=12)
+    image_url: Optional[str] = Field(default=None, max_length=2048)
+    history: List[dict] = Field(default_factory=list, max_length=20)
 
 class QuizRequest(BaseModel):
     subject: str
     units: List[str]
-    grade_level: int
-    num_questions: int = 5
+    grade_level: int = Field(ge=6, le=12)
+    num_questions: int = Field(default=5, ge=1, le=25)
+    section: str = "All Sections"
+
+class QuizQuestion(BaseModel):
+    question: str
+    options: List[str] = Field(min_length=4, max_length=4)
+    correct_answer: str
+    explanation: str
 
 class QuizResponse(BaseModel):
-    questions: List[dict] = Field(
+    questions: List[QuizQuestion] = Field(
         description="List of MCQs with question, options, and answer"
     )
 
@@ -108,6 +125,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         return user_resp.user.id
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+answer_cache = AnswerCache(supabase, os.getenv("ANSWER_CACHE_SYLLABUS_VERSION", ""), TUTOR_CACHE_PROMPT + "|concise-900-v1")
+app.include_router(create_answer_library_router(supabase, get_current_user))
 
 TIER_PRICES = {
     "tier_49_daily": {"amount": 49, "days": 1},
@@ -211,13 +231,57 @@ def increment_profile(user_id: str, field: str):
     except Exception as e:
         print(f"Error incrementing {field}: {e}")
 
+def get_daily_profile(user_id: str):
+    """Reset both daily counters atomically in the database using the IST date."""
+    profile = supabase.rpc("reset_daily_usage", {"target_user_id": user_id}).execute().data
+    if not profile:
+        raise HTTPException(status_code=404, detail="User profile not found")
+    return profile
+
+@app.get("/profile")
+async def current_profile(user_id: str = Depends(get_current_user)):
+    return await asyncio.to_thread(get_daily_profile, user_id)
+
 # ==========================================
 # 4. CHAT ROUTE
 # ==========================================
 
 @app.post("/ask")
 async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_user)):
+    reservation = await asyncio.to_thread(lambda: supabase.rpc("reserve_chat_request", {
+        "target_user_id": user_id, "target_session_id": str(data.session_id)
+    }).execute().data)
+    errors = {
+        "profile": (404, "User profile not found"),
+        "session": (404, "Conversation not found"),
+        "conversation_limit": (409, "This conversation has reached 10 questions. Start a new chat."),
+        "daily_limit": (403, "Daily question allowance reached. Try again tomorrow."),
+    }
+    if not reservation or "error" in reservation:
+        status, message = errors.get((reservation or {}).get("error"), (503, "Usage limits unavailable"))
+        raise HTTPException(status_code=status, detail=message)
+    request_id = reservation["request_id"]
+    usage = {}
+    vision_usage = {}
+    answer_cache_id = None
+    response_source = "ai"
+
+    async def save_usage(status):
+        # Missing metadata stays NULL: never report an interrupted request as free.
+        record = {"status": status, "answer_cache_id": answer_cache_id, "response_source": response_source,
+                  "input_tokens": usage.get("input_tokens"),
+                  "output_tokens": usage.get("output_tokens"),
+                  "vision_input_tokens": vision_usage.get("input_tokens"),
+                  "vision_output_tokens": vision_usage.get("output_tokens")}
+        try:
+            await asyncio.to_thread(lambda: supabase.table("ai_chat_requests").update(record).eq("id", request_id).execute())
+        except Exception:
+            # Keep the original reservation so an accounting failure cannot reopen quota.
+            print(f"Usage reconciliation needed for request {request_id}")
+
     try:
+        cache_eligible = eligible_question(data.question, data.history, data.image_url, reservation["turns_used"])
+        data.history = bounded_history(data.history)
         # Prepare context search query early
         clean_question = data.question.strip() if data.question else ""
         search_query = clean_question
@@ -236,16 +300,9 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
         used_vision_model = False
 
         if data.image_url and data.image_url.strip():
-            await asyncio.sleep(1)
-            image_resp = await asyncio.to_thread(requests.get, data.image_url, timeout=15)
-            image_bytes = image_resp.content
-
-            # Detect MIME type from Content-Type header (fallback to jpeg)
-            content_type = image_resp.headers.get("Content-Type", "")
-            if "png" in content_type:
-                image_mime = "image/png"
-            elif "webp" in content_type:
-                image_mime = "image/webp"
+            image_bytes, image_mime = await asyncio.to_thread(
+                download_chat_image, data.image_url, os.getenv("SUPABASE_URL", "")
+            )
 
             # --- Step 1: Try EasyOCR (fast, good for text-heavy images) ---
             extracted = await asyncio.to_thread(
@@ -281,6 +338,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
                 ]
                 vision_response = await asyncio.to_thread(gemini_vision.invoke, vision_prompt)
                 extracted_text = vision_response.content
+                vision_usage.update(vision_response.usage_metadata or {})
                 print(f"[Vision] Gemini description: {extracted_text[:200]}...")
             else:
                 extracted_text = ocr_text
@@ -288,78 +346,28 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
 
             search_query = f"{search_query} {extracted_text}"
 
-        # 1. Fire Profile Fetch and Context Fetch concurrently
-        def fetch_profile():
-            return supabase.table("profiles").select("chats_today, subscription_tier, previous_tier, last_active_date").eq("id", user_id).execute()
-        
-        profile_task = asyncio.create_task(asyncio.to_thread(fetch_profile))
-        
-        context_task = asyncio.create_task(asyncio.to_thread(
-            get_context,
-            search_query if search_query.strip() else "textbook page",
-            data.subject,
-            data.grade_level
-        ))
+        if extracted_text is not None:
+            extracted_text = clip_text(extracted_text, 6000)
+        context = await asyncio.to_thread(
+            get_context, clip_text(search_query, 8000), data.subject, data.grade_level
+        )
+        context = clip_text(context, 12000)
+        cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context) if cache_eligible else None
+        cached = await asyncio.to_thread(answer_cache.lookup, cache_identity) if cache_identity else None
+        if cached:
+            response_source = "cache"
+            answer_cache_id = cached["id"]
+            usage.update(input_tokens=0, output_tokens=0)
+            vision_usage.update(input_tokens=0, output_tokens=0)
+            await save_usage("cached")
 
-        profile_res = await profile_task
-        if not profile_res.data:
-            raise HTTPException(status_code=404, detail="User profile not found")
-        
-        user_profile = profile_res.data[0]
-        
-        raw_chats = user_profile.get("chats_today")
-        chats_today = int(raw_chats) if raw_chats is not None else 0
-        
-        raw_tier = user_profile.get("subscription_tier")
-        user_tier = str(raw_tier).strip().lower() if raw_tier is not None else "free"
+            async def cached_response():
+                yield cached["answer"]
 
-        prev_tier = user_profile.get("previous_tier")
-        last_active = user_profile.get("last_active_date")
-
-        from datetime import datetime, timedelta
-        
-        # Calculate IST (UTC + 5:30)
-        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
-        today_str = ist_now.strftime('%Y-%m-%d')
-
-        # LAZY RESET LOGIC ON BACKEND
-        if last_active != today_str:
-            chats_today = 0
-            if user_tier == "tier_49_daily":
-                user_tier = prev_tier if prev_tier else "free"
-                prev_tier = None
-            
-            # Force the update in DB so we are in sync (fire and forget)
-            def update_lazy_reset():
-                supabase.table("profiles").update({
-                    "chats_today": chats_today,
-                    "subscription_tier": user_tier,
-                    "previous_tier": prev_tier,
-                    "last_active_date": today_str
-                }).eq("id", user_id).execute()
-            asyncio.create_task(asyncio.to_thread(update_lazy_reset))
-
-        # Enforce accurate subscription package ceilings and custom messaging
-        max_allowed_chats = 5  
-        limit_message = "Daily limit reached. Upgrade to Pro!"
-        
-        if user_tier == "tier_199":
-            max_allowed_chats = 50
-            limit_message = "Your limit per day is over. Upgrade your plan to get more daily questions!"
-        elif user_tier == "tier_499":
-            max_allowed_chats = 150
-            limit_message = "Your limit per day is over. Upgrade your plan to get more daily questions!"
-        elif user_tier in ["tier_49_daily", "admin"]:
-            max_allowed_chats = 999999  
-
-        # Enforce subscription cap barriers dynamically
-        if user_tier not in ["admin", "tier_49_daily"] and chats_today >= max_allowed_chats:
-            async def paywall_generator():
-                yield f"__PAYWALL__{limit_message}"
-            return StreamingResponse(paywall_generator(), media_type="text/plain")
-
-        # 2. Wait for context task only after user passed the paywall
-        context = await context_task
+            return StreamingResponse(cached_response(), media_type="text/plain", headers={
+                "X-Answer-Source": "cache", "X-Answer-Id": str(answer_cache_id),
+                "X-Chat-Turns-Used": str(reservation["turns_used"]),
+            })
 
         # Process history array into proper LangChain message objects for continuity
         formatted_history = []
@@ -375,7 +383,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
         if extracted_text is not None:
             system_prompt = f"""
 SYSTEM:
-{AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)}
+{build_tutor_prompt(context, data.grade_level, data.subject)}
 
 INSTRUCTIONS:
 - Explain clearly in Tanglish
@@ -399,34 +407,45 @@ INSTRUCTIONS:
         # NORMAL TEXT FLOW
         # ==================================
         else:
-            system_prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(context=context)
+            system_prompt = build_tutor_prompt(context, data.grade_level, data.subject)
             # Inject history into the prompt stream
             messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=clean_question)]
 
+        messages[0].content += "\nKeep the answer concise, usually under 200 words. Finish the explanation within the reply limit."
+
         # Define the streaming generator
         async def response_generator():
+            status = "interrupted"
+            answer_parts = []
+            finish_reason = None
             try:
-                # Call LLM Engine and stream chunks
-                async for chunk in deepseek_llm.astream(messages):
+                async for chunk in deepseek_llm.bind(max_tokens=MAX_REPLY_TOKENS).astream(messages):
+                    finish_reason = (getattr(chunk, "response_metadata", None) or {}).get("finish_reason") or finish_reason
+                    if chunk.usage_metadata:
+                        for key in ("input_tokens", "output_tokens"):
+                            usage[key] = usage.get(key, 0) + chunk.usage_metadata.get(key, 0)
                     if chunk.content:
+                        answer_parts.append(chunk.content)
                         yield chunk.content
-                
-                # Database Counter Increment Execution (happens after successful stream finishes)
-                asyncio.create_task(asyncio.to_thread(
-                    increment_profile,
-                    user_id,
-                    "chats_today"
-                ))
-            except Exception as stream_e:
-                print(f"Streaming Exception: {stream_e}")
-                yield f"\n\n[Error generating response: {str(stream_e)}]"
+                status = "complete" if usage else "usage_missing"
+                # Never collect a truncated, failed, or context-dependent reply for sharing.
+                if cache_identity and finish_reason == "stop":
+                    await asyncio.to_thread(answer_cache.save_candidate, cache_identity, "".join(answer_parts))
+            except Exception:
+                status = "failed"
+                yield "\n\n[The reply could not be completed. Please try again.]"
+            finally:
+                await asyncio.shield(save_usage(status))
 
-        return StreamingResponse(response_generator(), media_type="text/plain")
+        return StreamingResponse(response_generator(), media_type="text/plain",
+                                 headers={"X-Answer-Source": "ai", "X-Chat-Turns-Used": str(reservation["turns_used"])})
 
-    except Exception as e:
-        print("--- CRITICAL SERVER EXCEPTION TRACEBACK ---")
+    except BaseException as error:
+        await asyncio.shield(save_usage("failed"))
+        if isinstance(error, (HTTPException, asyncio.CancelledError)):
+            raise
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Unable to prepare the tutor reply")
 
 # ==========================================
 # 5. QUIZ ROUTE
@@ -434,16 +453,21 @@ INSTRUCTIONS:
 
 @app.post("/generate-quiz")
 async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_user)):
+    reservation_date = None
     try:
-        quizzes_today = await asyncio.to_thread(get_profile, user_id, "quizzes_today")
-
-        if quizzes_today >= 5:
+        # Reserve a slot under a database row lock so parallel requests cannot bypass the cap.
+        reservation_date = await asyncio.to_thread(
+            lambda: supabase.rpc("reserve_daily_quiz", {"target_user_id": user_id}).execute().data
+        )
+        if not reservation_date:
             raise HTTPException(
                 status_code=403,
                 detail="Daily quiz limit reached"
             )
 
         search_query = f"{data.subject} Units: {', '.join(data.units)}"
+        if data.section != "All Sections":
+            search_query += f" Section: {data.section}"
 
         context = await asyncio.to_thread(
             get_context,
@@ -457,11 +481,11 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
         quiz_prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                AKKA_QUIZ_PROMPT + "\n\nContext:\n{context}"
+                AKKA_QUIZ_PROMPT
             ),
             (
                 "human",
-                "Generate {num} MCQs based on syllabus."
+                "Generate {num_questions} MCQs based on syllabus."
             )
         ])
 
@@ -471,22 +495,39 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
         )
 
         quiz_data = await chain.ainvoke({
-            "num": data.num_questions,
+            "num_questions": data.num_questions,
+            "grade_level": data.grade_level,
+            "subject": data.subject,
             "context": context
         })
 
-        # Database Counter Increment
-        asyncio.create_task(asyncio.to_thread(
-            increment_profile,
-            user_id,
-            "quizzes_today"
-        ))
+        if len(quiz_data.questions) != data.num_questions or any(
+            q.correct_answer not in q.options for q in quiz_data.questions
+        ):
+            raise HTTPException(status_code=502, detail="Could not generate a valid quiz. Please try again")
 
-        return quiz_data
+        # Keep the existing app's separate option fields during staged client rollout.
+        return {"questions": [
+            {**q.model_dump(), **dict(zip(
+                ("option_a", "option_b", "option_c", "option_d"), q.options
+            ))}
+            for q in quiz_data.questions
+        ]}
 
-    except Exception as e:
+    except BaseException as e:
+        if reservation_date:
+            try:
+                await asyncio.to_thread(lambda: supabase.rpc("release_daily_quiz", {
+                    "target_user_id": user_id, "usage_date": reservation_date
+                }).execute())
+            except Exception:
+                print("Failed to release quiz reservation")
+        if isinstance(e, (HTTPException, asyncio.CancelledError)):
+            raise
+        if not isinstance(e, Exception):
+            raise
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Could not generate quiz. Please try again")
 
 # ==========================================
 # 6. PAYMENTS
@@ -847,7 +888,7 @@ async def submit_answer(code: str, data: StudentAnswerRequest, student_id: str =
         if s['status'] != 'active':
             raise HTTPException(status_code=400, detail="Quiz is not active")
 
-        question = supabase.table('quiz_questions').select('correct_answer,question_type,sort_order').eq('id', data.question_id).execute()
+        question = supabase.table('quiz_questions').select('correct_answer,question_type,sort_order').eq('id', data.question_id).eq('session_id', s['id']).execute()
         if not question.data:
             raise HTTPException(status_code=404, detail="Question not found")
         q = question.data[0]
