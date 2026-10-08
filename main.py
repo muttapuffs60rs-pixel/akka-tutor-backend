@@ -186,7 +186,9 @@ def get_context(query: str, subject: str, grade: int,
         if rpc.data:
             returned_contents = [r["content"] for r in rpc.data if "content" in r]
             # Fetch metadata from documents table where content matches
-            meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name").in_("content", returned_contents).execute()
+            meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
+                .eq("grade_level", grade).eq("subject", subject) \
+                .in_("content", returned_contents).execute()
             
             # Create a lookup map
             meta_map = {row["content"]: row for row in meta_res.data}
