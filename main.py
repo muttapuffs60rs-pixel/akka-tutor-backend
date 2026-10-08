@@ -19,6 +19,7 @@ from image_security import download_chat_image
 from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
 from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
+from textbook_retrieval import tamil_keyword_passages
 import razorpay
 
 # ==========================================
@@ -145,6 +146,12 @@ def _get_context_cached(query: str, subject: str, grade: int,
     try:
         import re
         chunks = []
+        if subject == 'Tamil':
+            try:
+                for row in tamil_keyword_passages(supabase, query, subject, grade):
+                    chunks.append(f"[{row.get('section_name', '')}]\n{row['content']}")
+            except Exception:
+                print('Tamil keyword lookup unavailable; using semantic retrieval')
         
         # 1. EXPLICIT SQL MATCHING (Fixes the "Section 4.11" issue)
         # Vector search is terrible for pure numbers. If the student asks for "4.11.2", explicitly query the DB.
