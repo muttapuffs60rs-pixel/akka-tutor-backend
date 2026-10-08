@@ -1,5 +1,5 @@
 # pyrefly: ignore [missing-import]
-import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string
+import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string, time
 from typing import List, Optional
 from uuid import UUID
 from dotenv import load_dotenv
@@ -140,8 +140,8 @@ TIER_PRICES = {
 # ==========================================
 
 @functools.lru_cache(maxsize=1000)
-def get_context(query: str, subject: str, grade: int,
-                threshold=0.1, count=5):
+def _get_context_cached(query: str, subject: str, grade: int,
+                        threshold, count, cache_epoch):
     try:
         import re
         chunks = []
@@ -186,13 +186,16 @@ def get_context(query: str, subject: str, grade: int,
         if rpc.data:
             returned_contents = [r["content"] for r in rpc.data if "content" in r]
             # Fetch metadata from documents table where content matches
-            meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
-                .eq("grade_level", grade).eq("subject", subject) \
-                .in_("content", returned_contents).execute()
-            
-            # Create a lookup map
-            meta_map = {row["content"]: row for row in meta_res.data}
-            
+            meta_map = {}
+            try:
+                meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
+                    .eq("grade_level", grade).eq("subject", subject) \
+                    .in_("content", returned_contents).execute()
+                meta_map = {row["content"]: row for row in meta_res.data}
+            except Exception:
+                # Chapter labels are optional; preserve successfully retrieved textbook text.
+                print("Textbook chapter labels unavailable; using retrieved passages")
+
             for r in rpc.data:
                 c = r.get("content", "")
                 # Prevent duplicates if exact match already found it
@@ -205,10 +208,23 @@ def get_context(query: str, subject: str, grade: int,
                     metadata_header = f"[{meta.get('unit_name', '')} -> {meta.get('section_name', '')} -> {meta.get('sub_section_name', '')}]\n"
                 chunks.append(metadata_header + c)
 
-        return "\n---\n".join(chunks) if chunks else "No specific textbook context found."
-    except Exception as rpc_err:
-        print(f"RPC Context lookup error (falling back): {rpc_err}")
-        return "No specific textbook context found."
+        if not chunks:
+            raise LookupError("No textbook matches")
+        return "\n---\n".join(chunks)
+    except Exception:
+        # Exceptions must escape the LRU function so outages never become cached answers.
+        raise
+
+
+def get_context(query: str, subject: str, grade: int, threshold=0.1, count=5):
+    for attempt in range(2):
+        try:
+            return _get_context_cached(query, subject, grade, threshold, count, int(time.time() // 300))
+        except LookupError:
+            break
+        except Exception as error:
+            print(f"Textbook lookup attempt {attempt + 1} failed: {type(error).__name__}")
+    return "No specific textbook context found."
 
 def get_profile(user_id: str, field: str):
     res = supabase.table("profiles").select(field).eq("id", user_id).execute()
