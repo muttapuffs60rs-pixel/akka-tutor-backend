@@ -164,3 +164,27 @@ digest includes all grade guidance, so entries approved under the old generic
 prompt cannot be reused after this update; new candidates need fresh approval.
 No extra SQL migration is required for this grade update. Offline tests verify the
 instructions and grade-specific lookup, not the teaching quality of live AI output.
+
+## Tamil retrieval checks
+
+Tamil and Advance Tamil use a grade-and-subject-scoped lexical index before
+semantic retrieval. Titles, poet names and quoted opening lines help identify
+the requested work. Matching poetry keeps its line breaks and is not mixed with
+unrelated vector matches. Missing named works return the missing-context response.
+Formatting cleanup is read-time only; source documents remain unchanged.
+Book indexes expire after 15 minutes and at most eight are retained in memory.
+Database failures are retried rather than saved as empty indexes.
+
+`tests/fixtures/tamil_retrieval_cases.json` contains textbook-checked poetry,
+prose, grammar and wrong-grade/missing-work cases. To run the full-corpus checks,
+export only the indicated subject for each grade as `tamil-corpus-N.json`
+(document id, content and chapter fields), then run:
+
+```
+python evaluate_tamil_retrieval.py --corpus-dir PATH --output report.json
+python -m unittest discover -s tests
+```
+
+Retrieval checks confirm supporting passages within the context budget, not that
+every generated explanation is correct. Review live answers against the books
+before approving them in the answer library, especially literary interpretations.

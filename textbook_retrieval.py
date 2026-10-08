@@ -1,49 +1,164 @@
-"""Supplement semantic retrieval with scoped Tamil terminology matches."""
+"""Bounded, grade/subject-isolated Tamil lexical retrieval alongside vectors.
+
+Books are read once per cache lifetime, never sent whole to an AI provider.
+Original documents are left intact. Exceptions never populate the cache.
+"""
+from collections import Counter, OrderedDict
+import html
+import math
 import re
+import threading
+import time
 import unicodedata
 
+TAMIL_SUBJECTS = frozenset(('Tamil', 'Advance Tamil', 'Advanced Tamil'))
+_CACHE = OrderedDict()
+_LOCK = threading.Lock()
+CACHE_SECONDS = 900
+MAX_CACHED_BOOKS = 8
 
-def tamil_terms(question):
-    words = re.findall(r'[\u0b80-\u0bff]+', unicodedata.normalize('NFC', question))
-    ignored = {'பத்தாம்', 'வகுப்பு', 'தமிழ்', 'தமிழில்', 'பதில்', 'அளிக்கவும்',
-               'என்றால்', 'என்ன', 'மற்றும்', 'ஆகியவற்றை', 'ஒவ்வோர்',
-               'எடுத்துக்காட்டுடன்', 'விளக்குக', 'தொடர்'}
-    terms = []
-    for word in words:
-        if word in ignored or len(word) < 5:
-            continue
-        # Tamil textbook extraction varies between joined and spaced compounds.
-        word = re.sub(r'த்தொடர்.*$', '', word)
-        word = re.sub(r'த்$', '', word)
-        if len(word) >= 4 and word not in terms:
-            terms.append(word)
-    return terms[:6]
+_IGNORE = set('பத்தாம் பதினொன்றாம் பன்னிரண்டாம் ஆறாம் ஏழாம் எட்டாம் ஒன்பதாம் '
+              'வகுப்பு வகுப்பில் சிறப்புத் தமிழ் தமிழில் பாடநூலில் பாடநூல் உள்ள '
+              'பதில் அளிக்கவும் தருக என்றால் என்ன மற்றும் ஆகியவற்றை ஒவ்வோர் '
+              'எடுத்துக்காட்டுடன் விளக்குக விளக்கம் தெளிவாக வரிவரியாக '
+              'என்று தொடங்கும் செய்யுளுக்கு பாடலின் மையக்கருத்து ஆகியவற்றைத் '
+              'உணர்த்தும் கருத்து செய்யுள் பாடல் தொடர் பொருள் பொருளை பொருளையும் '
+              'செய்யுளின் விளக்குங்கள்'.split())
+
+
+def clean_passage(text):
+    text = unicodedata.normalize('NFC', html.unescape(text or ''))
+    text = re.sub(r'<[^>]*>|\[if[^\]]*\]|<!\[endif\]|\bendif\?', ' ', text, flags=re.I)
+    text = re.sub(r'\b(?:style|o:spid|type|src|o:title|alt)\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)', ' ', text)
+    text = text.replace('\u200c', '').replace('\u200d', '').replace('\ufeff', '')
+    # Preserve verse lines; search on whitespace-normalized copies.
+    return '\n'.join(re.sub(r'[ \t]+', ' ', line).strip()
+                     for line in text.replace('\r', '').splitlines() if line.strip()).strip()
 
 
 def normalized(text):
-    return re.sub(r'\s+', ' ', text.replace('\u200c', '').replace('\u200d', '')).strip()
+    return re.sub(r'\s+', ' ', clean_passage(text)).strip()
+
+
+def compact(text):
+    return re.sub(r'[^\u0b80-\u0bffa-z0-9]', '', normalized(text).lower())
+
+
+def stem(word):
+    # Match joined/spaced compounds and common title/author inflections.
+    word = re.sub(r'த்தொடர்.*$', '', word)
+    word = re.sub(r'த்$', '', word)
+    for ending, replacement in [('ரின்', 'ர்'), ('ருடைய', 'ர்'), ('த்தின்', 'ம்'),
+                                ('த்தை', 'ம்'), ('களின்', ''), ('களை', '')]:
+        if word.endswith(ending) and len(word) - len(ending) >= 4:
+            return word[:-len(ending)] + replacement
+    return word
+
+
+def tokens(text):
+    return [stem(w) for w in re.findall(r'[\u0b80-\u0bff]+|[a-z]+', normalized(text).lower())
+            if w not in _IGNORE and len(w) >= 4]
+
+
+def tamil_terms(question):
+    return list(dict.fromkeys(tokens(question)))[:24]
+
+
+def named_work_query(question):
+    return bool(re.search(r'[“"‘].+?[”"’]|செய்யு|பாடல|poem|poet', question, re.I))
+
+
+class TamilBookIndex:
+    def __init__(self, rows):
+        self.rows = []
+        seen = set()
+        for row in rows:
+            body = clean_passage(row.get('content', ''))
+            if (len(compact(body)) < 35 or body in seen or
+                    re.search(r'\b(?:alt|style|o:title|o:spid|src)\s*=|\.(?:png|emz|jpg)"', body)):
+                continue
+            if any(w in normalized(body) for w in ('பாடத்தலைப்புகள்', 'பக்க எண்')):
+                continue
+            seen.add(body)
+            title = ' '.join(row.get(k) or '' for k in ('unit_name', 'section_name', 'sub_section_name'))
+            self.rows.append((dict(row, content=body), Counter(tokens(body)), set(tokens(title)),
+                              compact(body), compact(title)))
+        self.frequency = Counter()
+        for _, body, title, _, _ in self.rows:
+            self.frequency.update(set(body) | title)
+
+    def search(self, question, count=6):
+        terms = tamil_terms(question)
+        phrases = [compact(p) for p in re.findall(r'[“"‘\x27]([^”"’\x27]+)[”"’\x27]', question)
+                   if len(compact(p)) >= 10]
+        phrase_matches = [any(p in body or p in title for p in phrases)
+                          for _, _, _, body, title in self.rows]
+        if phrases and not any(phrase_matches):
+            return []
+        ranked = []
+        for i, (row, body, title, compact_body, compact_title) in enumerate(self.rows):
+            matched = set(t for t in terms if t in body or t in title)
+            if not matched and not phrase_matches[i]:
+                continue
+            score = sum(math.log(1 + len(self.rows) / (1 + self.frequency[t])) *
+                        (min(body[t], 2) + 0.5 * (t in title)) for t in matched)
+            if phrases:
+                if not phrase_matches[i]:
+                    continue
+                score += 60 if any(p in compact_body for p in phrases) else 30
+            text = normalized(row['content'])
+            score += min(5, len(text) / 200)
+            if any(w in text for w in ('ஆகும்', 'எனப்படும்', 'என்பது')):
+                score += 5
+            if any(w in text for w in ('தேர்ந்தெடுக்க', 'DASH', 'டேஷ்', 'பொருத்துக',
+                                      'யாவை', 'யாது', 'எழுதுக')):
+                score *= 0.2
+            if score >= 3:
+                ranked.append((score, matched, row))
+        ranked.sort(key=lambda r: r[0], reverse=True)
+        if not phrases and named_work_query(question) and ranked and len(ranked[0][1]) >= 2:
+            section = ranked[0][2].get('section_name')
+            if section and not section.startswith('General'):
+                # Once the work is identified, keep its verse/author passages together.
+                ranked = [r for r in ranked if r[2].get('section_name') == section]
+        selected, covered = [], set()
+        while ranked and len(selected) < count:
+            best = max(range(len(ranked)), key=lambda i: ranked[i][0] +
+                       2 * sum(math.log(1 + len(self.rows) / (1 + self.frequency[t]))
+                               for t in ranked[i][1] - covered))
+            score, matched, row = ranked.pop(best)
+            if selected and score < max(3, selected[0][0] * 0.2):
+                continue
+            selected.append((score, row))
+            covered.update(matched)
+        return [row for _, row in selected]
 
 
 def tamil_keyword_passages(database, question, subject, grade):
-    if subject != 'Tamil':
+    if subject not in TAMIL_SUBJECTS:
         return []
-    selected = []
-    for term in tamil_terms(question):
-        rows = (database.table('documents')
-                .select('content, unit_name, section_name, sub_section_name')
-                .eq('grade_level', grade).eq('subject', subject)
-                .or_(f'content.ilike.%{term}%,section_name.ilike.%{term}%')
-                .limit(80).execute().data)
-        def score(row):
-            content = normalized(row.get('content', ''))
-            if len(content) < 65 or '<v:' in content or 'o:spid' in content:
-                return -1
-            return (4 * (term in content)
-                    + 3 * any(w in content for w in ('ஆகும்', 'எனப்படும்', 'என்பது'))
-                    + ('எடுத்துகாட்டு' in content or 'எடுத்துக்காட்டு' in content)
-                    - 3 * ('DASH' in content or 'விடை' in content))
-        for row in sorted(rows, key=score, reverse=True)[:2]:
-            content = normalized(row.get('content', ''))
-            if score(row) >= 5 and content not in [r['content'] for r in selected]:
-                selected.append({**row, 'content': content})
-    return selected
+    key = (id(database), grade, subject)
+    with _LOCK:
+        now = time.monotonic()
+        cached = _CACHE.get(key)
+        if cached and now - cached[0] < CACHE_SECONDS:
+            _CACHE.move_to_end(key)
+            index = cached[1]
+        else:
+            rows = []
+            for offset in range(0, 20000, 500):
+                batch = (database.table('documents')
+                         .select('id, content, unit_name, section_name, sub_section_name')
+                         .eq('grade_level', grade).eq('subject', subject)
+                         .order('id').range(offset, offset + 499).execute().data)
+                rows.extend(batch)
+                if len(batch) < 500:
+                    break
+            else:
+                raise RuntimeError('Tamil book exceeds index limit')
+            index = TamilBookIndex(rows)
+            _CACHE[key] = (time.monotonic(), index)
+            _CACHE.move_to_end(key)
+            while len(_CACHE) > MAX_CACHED_BOOKS:
+                _CACHE.popitem(last=False)
+    return index.search(question)

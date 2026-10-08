@@ -19,7 +19,7 @@ from image_security import download_chat_image
 from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
 from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
-from textbook_retrieval import tamil_keyword_passages
+from textbook_retrieval import tamil_keyword_passages, TAMIL_SUBJECTS, named_work_query, clean_passage
 import razorpay
 
 # ==========================================
@@ -146,12 +146,16 @@ def _get_context_cached(query: str, subject: str, grade: int,
     try:
         import re
         chunks = []
-        if subject == 'Tamil':
-            try:
-                for row in tamil_keyword_passages(supabase, query, subject, grade):
-                    chunks.append(f"[{row.get('section_name', '')}]\n{row['content']}")
-            except Exception:
-                print('Tamil keyword lookup unavailable; using semantic retrieval')
+        if subject in TAMIL_SUBJECTS:
+            # Exact opening lines and rare title/author words precede vector matches.
+            # Do not dilute a matched poem with unrelated semantic-search passages.
+            rows = tamil_keyword_passages(supabase, query, subject, grade)
+            if rows:
+                return '\n---\n'.join(
+                    f"[Class {grade} | {subject} | {clean_passage(row.get('section_name', ''))}]\n{row['content']}"
+                    for row in rows)
+            if named_work_query(query):
+                raise LookupError('Named Tamil work not found in selected textbook')
         
         # 1. EXPLICIT SQL MATCHING (Fixes the "Section 4.11" issue)
         # Vector search is terrible for pure numbers. If the student asks for "4.11.2", explicitly query the DB.
