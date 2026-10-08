@@ -16,7 +16,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from prompts import AKKA_QUIZ_PROMPT, TUTOR_CACHE_PROMPT, build_tutor_prompt
 from image_security import download_chat_image
-from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS
+from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
 from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
 import razorpay
@@ -302,15 +302,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
         data.history = bounded_history(data.history)
         # Prepare context search query early
         clean_question = data.question.strip() if data.question else ""
-        search_query = clean_question
-        if data.history and len(clean_question.split()) < 10:
-            last_user_question = ""
-            for msg in reversed(data.history):
-                if msg.get("role") == "user":
-                    last_user_question = msg.get("content", "")
-                    break
-            if last_user_question:
-                search_query = f"{last_user_question} {clean_question}"
+        search_query = retrieval_query(clean_question, data.history)
 
         extracted_text = None
         image_bytes = None

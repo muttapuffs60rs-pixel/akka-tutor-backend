@@ -13,7 +13,7 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from pydantic import BaseModel, Field, ValidationError
-from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS
+from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT, build_tutor_prompt
 from answer_cache import eligible_question
 
