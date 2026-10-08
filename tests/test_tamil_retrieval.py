@@ -65,3 +65,10 @@ class TamilRetrievalTests(unittest.TestCase):
         db = Mock()
         self.assertEqual(tamil_keyword_passages(db, 'Explain atoms', 'Science', 10), [])
         db.table.assert_not_called()
+
+    def test_generic_question_words_do_not_retrieve_unrelated_literature(self):
+        story = {'content': 'சோமநாதன் பேசிக் கொண்டிருந்ததைக் கேட்டுக் கொண்டிருந்த நேரம் போக, தான் பேச நேர்ந்தபோதெல்லாம் மகனின் கலியாண விஷயமாகவே பேசினார் பெரியசாமி. அவன் தனக்கொரு கலியாணம் என்பது பற்றி அதுவரை யோசித்ததில்லை. ஆனால், தகப்பனார் பேசுகிற தோரணையைப் பார்த்தால், தனக்கு யோசிக்க அவகாசமே தரமாட்டார் போலிருந்தது. சமாதானச் சூழ்நிலையில் வாழும் ஒரு தேசத்தின் ராணுவ உத்தியோகஸ்தன் கல்யாணம் செய்து கொள்ளலாம். அவ்விதம் திருமணம் புரிந்துகொண்டு எத்தனையோ பேர் குடும்பத்தோடு அங்கேயே வந்து வாழ்கிறார்களே என்பதையெல்லாம் நினைவு கூர்ந்து சரி என்று ஒப்புக்கொண்டான்.'}
+        unrelated = {'content': 'நாடகத்தில் காட்சியை வரையறை செய்ய, களம் அவசியம். நாடகம் நிகழும் சூழலை உணர்த்துவது களம் ஆகும்.'}
+        index = TamilBookIndex([story, unrelated])
+        rows = index.search('சிறுகதையில் சோமநாதன் திருமணம் செய்துகொள்ள ஒப்புக்கொண்ட சூழலை விளக்குக.')
+        self.assertEqual([row['content'] for row in rows], [story['content']])
