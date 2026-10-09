@@ -47,7 +47,10 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
         self.db.rpc.return_value.execute.return_value.data = {'request_id': 'request', 'turns_used': 1}
         claim = Mock()
         claim.execute.return_value.data = {'claimed': True}
-        self.db.rpc.side_effect = lambda name, args: claim if name == 'claim_chat_generation' else self.db.rpc.return_value
+        self.credits = Mock()
+        self.credits.execute.return_value.data = {'enabled': True, 'remaining': 65000}
+        self.db.rpc.side_effect = lambda name, args: (claim if name == 'claim_chat_generation' else
+            self.credits if name == 'begin_learning_credit_request' else self.db.rpc.return_value)
         self.env['answer_cache'] = Mock()
         self.env['answer_cache'].lookup.return_value = None
         self.env.update(supabase=self.db, get_context=Mock(return_value='x' * 50000))
@@ -62,6 +65,13 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPException) as error:
                 await self.env['chat_handler'](self.request, 'student')
             self.assertEqual(error.exception.status_code, status)
+        self.env['get_context'].assert_not_called()
+
+    async def test_exhausted_credits_stop_before_retrieval_or_ai(self):
+        self.credits.execute.return_value.data = {'error': 'credit_limit'}
+        with self.assertRaises(HTTPException) as error:
+            await self.env['chat_handler'](self.request, 'student')
+        self.assertEqual(error.exception.status_code, 403)
         self.env['get_context'].assert_not_called()
 
     async def test_stream_is_bounded_and_actual_usage_is_saved(self):
@@ -79,7 +89,8 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
         model.bind.assert_called_once_with(max_tokens=MAX_REPLY_TOKENS)
         self.assertEqual(len(calls[0]), 8)  # system + six historical messages + question
         self.assertLess(len(calls[0][0].content), 20000)
-        record = self.db.table.return_value.update.call_args.args[0]
+        record = [call.args[1]['record'] for call in self.db.rpc.call_args_list
+                  if call.args[0] == 'finish_learning_credit_request'][-1]
         self.assertEqual(record['input_tokens'], 100)
         self.assertEqual(record['output_tokens'], 20)
         self.assertEqual(record['status'], 'complete')
@@ -92,7 +103,8 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
         self.env['deepseek_llm'] = model
         response = await self.env['chat_handler'](self.request, 'student')
         _ = [chunk async for chunk in response.body_iterator]
-        record = self.db.table.return_value.update.call_args.args[0]
+        record = [call.args[1]['record'] for call in self.db.rpc.call_args_list
+                  if call.args[0] == 'finish_learning_credit_request'][-1]
         self.assertIsNone(record['input_tokens'])
         self.assertEqual(record['status'], 'usage_missing')
 

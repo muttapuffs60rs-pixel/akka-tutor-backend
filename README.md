@@ -120,6 +120,62 @@ DeepSeek/Gemini tokens in `ai_chat_requests`. They still consume one conversatio
 slot and the existing daily **question** allowance. No monthly token wallet or
 payment behavior was added. Daily question limits and AI token charges are distinct.
 
+The authenticated `GET /usage` endpoint reports only the caller's chat ledger,
+including vision tokens, paginated across the current IST calendar month. The
+drawer displays proposed tracking targets of 1.25M (Standard ₹249, legacy ID
+`tier_199`) and 3M (tier_499),
+explicitly labelled tracking only; these are not enforced subscription wallets
+or subscription-anniversary resets. Free users see their daily question allowance.
+Missing usage suppresses the monthly percentage. Quizzes and other non-chat AI
+features are not included. The card refreshes every 30 seconds while the drawer
+is open and provides manual refresh; errors display unavailable rather than zero.
+
+Premium (`tier_999`) is configured at ₹999 / 30 days with an 8M calendar-month
+tracking target. Its purchase button remains coming soon until billing is ready.
+Free accounts show a 50,000-token lifetime tracking target using all retained
+chat usage, so month changes do not refill it. This is NOT a persisted trial
+grant: signup eligibility, atomic token reservations, expiry/renewal enforcement,
+and account-abuse controls must be implemented before launch. Existing free
+accounts also see this tracking preview; missing legacy counts are flagged.
+The new tier uses the same existing daily/quiz guardrails as tier_499. Update
+the deployed reservation function to recognise tier_999 before activating it;
+no database migration or deployment has been performed for these local edits.
+
+### Free learning credits (new implementation; migration required)
+
+Apply `supabase_learning_credits.sql` after the chat reliability migration,
+then deploy this backend and the updated frontend together. This supersedes
+the free lifetime tracking preview above. Paid monthly token targets remain
+tracking-only; this implementation changes free **chat** access, not quiz quotas.
+
+- Each free account receives 15,000 daily credits, reset at midnight IST without
+  accumulation. Accounts created at/after the migration's persistent
+  `learning_credit_policy.welcome_from` receive 50,000 welcome credits once.
+  Existing accounts receive daily credits but no retroactive welcome grant.
+- Daily credits are spent before welcome credits. Cached replies cost 3,000
+  credits and retain zero provider-token usage. AI replies cost recorded input,
+  output and vision tokens. Reopening a transcript and idempotent request replay
+  do not create a new charge. Failed/interrupted replies cost zero credits.
+- One active free answer per account prevents concurrent requests spending the
+  same balance. A cached answer requires 3,000 available credits. An AI answer
+  may start with a positive balance and finish past zero; its excess is carried
+  against subsequent daily refills instead of cutting the reply off. Rollover
+  waits while an answer is active (up to the 10-minute recovery window).
+- The final ledger write and debit are one transaction. Duplicate settlement
+  returns the original charge. Missing-usage replies are recorded as unmetered
+  and waived, not assigned invented provider tokens. Accounting failures retain
+  admission for reconciliation and log the request ID; investigate these logs.
+- Wallets and credit RPCs are service-role only; the API uses the authenticated
+  caller ID. `/usage` includes separate daily/welcome balances for the drawer.
+  `/profile` flags credit enforcement to remove the obsolete five-chat client cap.
+- Credits are charged when the server completes delivery; transport cannot
+  prove the browser read the answer. A retry with the same request ID replays
+  the saved answer without a second charge.
+
+Local validation: `test_learning_credits.mjs` in the workspace executes the
+migration and checks balances in an isolated PGlite PostgreSQL database. No
+production migration, welcome grant or deployment has been performed yet.
+
 Staging acceptance checks (not run against the live database):
 
 1. Configure the version, ask a standalone textbook question, and verify a pending
@@ -225,3 +281,32 @@ provider-reported output usage; reasoning text is not streamed to students.
 This improves evidence handling but does not replace teacher-reviewed literary
 glosses. The regression corpus includes quoted novel grammar examples and keeps
 unknown-poem and wrong-grade rejection checks.
+
+### ₹49 top-up and saved-answer pricing update
+
+The ₹49 day pass is no longer offered for new orders. `TOPUP_PACKS.topup_49`
+configures a one-time 200,000-learning-credit pack valid for 30 days. It is kept
+separate from subscriptions: purchase must never replace the existing tier.
+The frontend shows Coming soon, and the order API rejects purchases until
+payment launch is enabled. Captured-payment verification, an idempotent grant
+RPC and expiring top-up balances are implemented locally; no production grants
+have been made. Existing legacy day-pass
+accounts keep their current expiry behaviour.
+
+Every newly completed saved answer records 3,000 learning credits on the request
+ledger, including paid plans, and zero actual AI tokens. Free balances deduct
+that amount; paid tracking meters now use learning-credit charges rather than
+provider tokens, including actual AI usage for non-cached answers. Old settled
+requests retain their historical charge; retries do not reprice them. Paid
+monthly blocking is still pending. The underlying input/output/vision usage
+remains available separately for company cost analysis.
+
+Top-ups are stored independently in `learning_credit_topups`. A verified ₹49 INR
+captured payment grants 200,000 credits once per payment/order, expiring 30 days
+after the first grant. Repeat verification never extends expiry or refills the
+pack. Free daily/welcome balances and paid monthly tracking allowances are used
+before packs; valid packs are spent earliest-expiry first. Paid usage meters
+exclude credits deducted from top-ups, avoiding double deduction. Paid monthly
+blocking remains pending. Packs valid at answer admission may finish being used
+during that answer even if their expiry passes; they cannot start a new answer
+after expiry. Never call the grant RPC on a client or before payment validation.

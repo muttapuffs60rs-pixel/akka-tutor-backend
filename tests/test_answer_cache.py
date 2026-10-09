@@ -76,6 +76,20 @@ class CacheIdentityTests(unittest.TestCase):
 class CacheRouteTests(unittest.IsolatedAsyncioTestCase):
     setUp = chat_tests.ChatCostTests.setUp
 
+    async def test_cached_answer_requires_full_3000_credit_balance(self):
+        self.request.history = []
+        self.credits.execute.return_value.data = {'enabled': True, 'remaining': 2999}
+        self.env['answer_cache'].lookup.return_value = {'id': 'entry', 'answer': 'Reviewed answer'}
+        model = Mock()
+        self.env['deepseek_llm'] = model
+        with self.assertRaises(chat_tests.HTTPException) as error:
+            await self.env['chat_handler'](self.request, 'student')
+        self.assertEqual(error.exception.status_code, 403)
+        model.bind.assert_not_called()
+        records = [call.args[1]['record'] for call in self.db.rpc.call_args_list
+                   if call.args[0] == 'finish_learning_credit_request']
+        self.assertEqual(records[-1]['status'], 'failed')
+
     async def test_cache_hit_has_zero_tokens_and_skips_ai(self):
         self.request.history = []
         self.env['answer_cache'].lookup.return_value = {'id': 'entry', 'answer': 'Reviewed answer'}
@@ -85,7 +99,8 @@ class CacheRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([part async for part in result.body_iterator], ['Reviewed answer'])
         model.bind.assert_not_called()
         self.assertEqual(result.headers['x-answer-source'], 'cache')
-        record = self.db.table.return_value.update.call_args.args[0]
+        record = [call.args[1]['record'] for call in self.db.rpc.call_args_list
+                  if call.args[0] == 'finish_learning_credit_request'][-1]
         self.assertEqual(record['input_tokens'], 0)
         self.assertEqual(record['output_tokens'], 0)
         self.assertEqual(record['vision_input_tokens'], 0)

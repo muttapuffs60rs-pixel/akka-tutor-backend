@@ -44,7 +44,7 @@ BEGIN
         WHERE user_id = target_user_id AND session_id = target_session_id;
     IF used >= 10 THEN RETURN jsonb_build_object('error', 'conversation_limit'); END IF;
     daily_limit := CASE p->>'subscription_tier'
-        WHEN 'tier_199' THEN 50 WHEN 'tier_499' THEN 150
+        WHEN 'tier_199' THEN 50 WHEN 'tier_499' THEN 150 WHEN 'tier_999' THEN 150
         WHEN 'tier_49_daily' THEN 999999 WHEN 'admin' THEN 999999 ELSE 5 END;
     IF COALESCE((p->>'chats_today')::integer, 0) >= daily_limit THEN
         RETURN jsonb_build_object('error', 'daily_limit');

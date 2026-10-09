@@ -26,6 +26,7 @@ import razorpay
 import httpx
 from database_reliability import database_options, retry_database
 from chat_queue import ChatQueue, run_queued
+from usage_meter import fetch_usage
 
 # ==========================================
 # 1. SETUP
@@ -142,10 +143,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
 answer_cache = AnswerCache(supabase, os.getenv("ANSWER_CACHE_SYLLABUS_VERSION", ""), TUTOR_CACHE_PROMPT + "|concise-900-v1")
 app.include_router(create_answer_library_router(supabase, get_current_user))
 
+TOPUP_PACKS = {"topup_49": {"amount": 49, "days": 30, "credits": 200_000}}
+
 TIER_PRICES = {
-    "tier_49_daily": {"amount": 49, "days": 1},
-    "tier_199": {"amount": 199, "days": 30},
-    "tier_499": {"amount": 499, "days": 30}
+    # Keep the stored tier ID compatible with existing profiles and quota RPCs.
+    "tier_199": {"amount": 249, "days": 30},
+    "tier_499": {"amount": 499, "days": 30},
+    "tier_999": {"amount": 999, "days": 30}
 }
 
 # ==========================================
@@ -281,7 +285,22 @@ def get_daily_profile(user_id: str):
 
 @app.get("/profile")
 async def current_profile(user_id: str = Depends(get_current_user)):
-    return await asyncio.to_thread(get_daily_profile, user_id)
+    profile = await asyncio.to_thread(get_daily_profile, user_id)
+    return dict(profile, free_credit_limit_enabled=True)
+
+
+@app.get("/usage")
+async def current_usage(user_id: str = Depends(get_current_user)):
+    def read():
+        profile = get_daily_profile(user_id)
+        if (profile.get('subscription_tier') or 'free') == 'free':
+            return {'tier': 'free', 'learning_credits': supabase.rpc('learning_credit_balance', {
+                'target_user_id': user_id}).execute().data}
+        result = fetch_usage(supabase, profile, user_id)
+        result['topup_remaining'] = supabase.rpc('learning_credit_balance', {
+            'target_user_id': user_id}).execute().data['topup_remaining']
+        return result
+    return await asyncio.to_thread(read)
 
 # ==========================================
 # 4. CHAT ROUTE
@@ -362,13 +381,23 @@ async def perform_chat(data: ChatRequest, user_id: str):
             record['response_text'] = ''.join(answer_parts)
             record['response_expires_at'] = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
         try:
-            await asyncio.to_thread(retry_database, lambda: supabase.table("ai_chat_requests").update(record)
-                                    .eq("id", request_id).eq('execution_id', execution_id).execute())
+            await asyncio.to_thread(retry_database, lambda: supabase.rpc('finish_learning_credit_request', {
+                'target_user_id': user_id, 'target_request_id': request_id,
+                'target_execution_id': execution_id, 'record': record}).execute())
         except Exception:
             # Keep the original reservation so an accounting failure cannot reopen quota.
             print(f"Usage reconciliation needed for request {request_id}")
 
     try:
+        credit_admission = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
+            'begin_learning_credit_request', {'target_user_id': user_id,
+                                             'target_request_id': request_id}).execute().data)
+        if not credit_admission or credit_admission.get('error'):
+            code = (credit_admission or {}).get('error', 'credit_unavailable')
+            message = ('Your available learning credits are exhausted. Daily credits reset at midnight IST.'
+                       if code == 'credit_limit' else 'Please wait for the current answer before asking another question.')
+            raise HTTPException(403 if code == 'credit_limit' else 409, message,
+                                headers={'X-Chat-Error': code})
         cache_eligible = eligible_question(data.question, data.history, data.image_url, reservation["turns_used"])
         data.history = bounded_history(data.history)
         # Prepare context search query early
@@ -436,15 +465,21 @@ async def perform_chat(data: ChatRequest, user_id: str):
         cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context) if cache_eligible else None
         cached = await asyncio.to_thread(answer_cache.lookup, cache_identity) if cache_identity else None
         if cached:
+            if credit_admission.get('enabled') and credit_admission['remaining'] < 3000:
+                raise HTTPException(403, 'Your available learning credits are insufficient for this answer. Daily credits reset at midnight IST.',
+                                    headers={'X-Chat-Error': 'credit_limit'})
             response_source = "cache"
             answer_cache_id = cached["id"]
             usage.update(input_tokens=0, output_tokens=0)
             vision_usage.update(input_tokens=0, output_tokens=0)
             answer_parts.append(cached['answer'])
-            await save_usage("cached")
-
             async def cached_response():
-                yield cached["answer"]
+                completed = False
+                try:
+                    yield cached["answer"]
+                    completed = True
+                finally:
+                    await asyncio.shield(save_usage('cached' if completed else 'interrupted'))
 
             return StreamingResponse(cached_response(), media_type="text/plain", headers={
                 "X-Answer-Source": "cache", "X-Answer-Id": str(answer_cache_id),
@@ -618,6 +653,8 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
 
 @app.post("/create-order")
 async def create_order(req: OrderRequest, user_id: str = Depends(get_current_user)):
+    if req.tier_id in TOPUP_PACKS:
+        raise HTTPException(503, "Top-up payments are not available yet.")
     if not razorpay_client:
         raise HTTPException(status_code=500, detail="Razorpay not configured")
     try:
@@ -658,6 +695,22 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         
         if order_user_id != auth_user_id:
             raise HTTPException(status_code=403, detail="Order user mismatch")
+
+        if tier_id in TOPUP_PACKS:
+            # No subscription mutation. Grant only after captured payment validation.
+            pack = TOPUP_PACKS[tier_id]
+            payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
+            expected_amount = pack['amount'] * 100
+            if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
+                    or payment.get('order_id') != req.razorpay_order_id
+                    or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
+                    or payment.get('status') != 'captured'):
+                raise HTTPException(400, 'Top-up payment is not captured or does not match the pack')
+            grant = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
+                'grant_learning_credit_topup', {'target_user_id': auth_user_id,
+                    'payment_id_value': req.razorpay_payment_id,
+                    'order_id_value': req.razorpay_order_id}).execute().data)
+            return {'status': 'success', 'topup': grant}
             
         tier_info = TIER_PRICES.get(tier_id)
         if not tier_info:
@@ -706,6 +759,8 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid Payment Signature")
+    except HTTPException:
+        raise
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -763,7 +818,7 @@ async def create_live_quiz(data: LiveQuizCreate, teacher_id: str = Depends(get_c
                         status_code=403,
                         detail="Unpaid users can only host 1 live quiz per month. Upgrade to Pro for unlimited hosting!"
                     )
-            elif user_tier in ["tier_199", "tier_499"]:
+            elif user_tier in ["tier_199", "tier_499", "tier_999"]:
                 # Count quizzes created by this teacher today in IST
                 limit = 3 if user_tier == "tier_199" else 5
                 start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -856,7 +911,7 @@ async def get_live_quiz(code: str, user_id: str = Depends(get_current_user)):
                             status_code=403,
                             detail="Unpaid users can only participate in 3 live quizzes per month. Upgrade to Pro for unlimited access!"
                         )
-                elif user_tier in ["tier_199", "tier_499"]:
+                elif user_tier in ["tier_199", "tier_499", "tier_999"]:
                     # Paid users: daily unique session limits
                     limit = 10 if user_tier == "tier_199" else 15
                     start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
