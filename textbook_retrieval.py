@@ -130,6 +130,13 @@ class TamilBookIndex:
                     continue
                 score += 60 if any(p in compact_body for p in phrases) else 30
             text = normalized(row['content'])
+            if grammar_terms:
+                # Prefer the definition of the requested category over a subtype
+                # or a paragraph that merely mentions that category.
+                definitions = sum(bool(re.search(re.escape(t) +
+                    r'(?:த்)?(?:த்தொடர்கள்|த்தொடர்|தொடர்கள்|தொடர்)?(?:எனப்படும்|ஆகும்)',
+                    compact_body)) for t in grammar_terms)
+                score += 40 * definitions
             score += min(5, len(text) / 200)
             if any(w in text for w in ('ஆகும்', 'எனப்படும்', 'என்பது')):
                 score += 5
