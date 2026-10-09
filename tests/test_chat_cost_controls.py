@@ -16,7 +16,7 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from pydantic import BaseModel, Field, ValidationError
-from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
+from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query, chat_model_options
 from prompts import AKKA_TUTOR_SYSTEM_PROMPT, build_tutor_prompt
 from answer_cache import eligible_question
 
@@ -34,6 +34,13 @@ def load_chat():
 
 
 class ChatCostTests(unittest.IsolatedAsyncioTestCase):
+    def test_literature_reasoning_is_bounded_and_grammar_keeps_normal_budget(self):
+        options = chat_model_options('Advance Tamil', '“கண்ணுள் மணியைக் கருதிய பேரொளியை” செய்யுளை விளக்குக')
+        self.assertEqual(options['max_tokens'], 1800)
+        self.assertEqual(options['extra_body']['thinking']['type'], 'enabled')
+        self.assertEqual(chat_model_options('Tamil', '“வந்த மாணவன்” பெயரெச்சம் பற்றி விளக்குக'), {'max_tokens':900})
+        self.assertEqual(chat_model_options('Science', 'Explain the poem of atoms'), {'max_tokens':900})
+
     def setUp(self):
         self.env = load_chat()
         self.db = Mock()

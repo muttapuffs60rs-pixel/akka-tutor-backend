@@ -1,6 +1,15 @@
 """Bound chat prompt size independently of client-side controls."""
 MAX_EXCHANGES = 10
 MAX_REPLY_TOKENS = 900
+MAX_LITERATURE_TOKENS = 1800  # Shared cap for reasoning plus visible answer.
+
+
+def chat_model_options(subject, question):
+    from textbook_retrieval import TAMIL_SUBJECTS, named_work_query
+    if subject in TAMIL_SUBJECTS and named_work_query(question):
+        return {'max_tokens': MAX_LITERATURE_TOKENS,
+                'extra_body': {'thinking': {'type': 'enabled'}, 'reasoning_effort': 'low'}}
+    return {'max_tokens': MAX_REPLY_TOKENS}
 
 
 def retrieval_query(question, history):

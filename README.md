@@ -217,3 +217,11 @@ The web client uses one request ID across up to four transport/admission attempt
 shows a waiting message, and distinguishes an in-progress duplicate from the
 10-question conversation limit. Old clients without a request ID still receive
 safe database retries inside one HTTP request, but cannot replay across HTTP calls.
+
+Named Tamil literature questions use low-effort reasoning with a hard 1,800-token
+completion budget shared by reasoning and the visible answer. Ordinary grammar,
+Maths and Science retain the 900-token cap. Reasoning tokens are included in
+provider-reported output usage; reasoning text is not streamed to students.
+This improves evidence handling but does not replace teacher-reviewed literary
+glosses. The regression corpus includes quoted novel grammar examples and keeps
+unknown-poem and wrong-grade rejection checks.

@@ -113,14 +113,28 @@ GRADE_TEACHING_GUIDANCE = {
 }
 
 # Invalidate older reviewed entries if either the template or grade guidance changes.
-TUTOR_CACHE_PROMPT = AKKA_TUTOR_SYSTEM_PROMPT + repr(sorted(GRADE_TEACHING_GUIDANCE.items()))
+TAMIL_FINAL_CHECK = """
+FINAL TAMIL EVIDENCE CHECK:
+When a requested word-sense is not explicitly glossed in the passage, begin that
+part with 'இந்தப் பகுதியில் இச்சொல்லுக்குத் தனிச்சொற்பொருள் தரப்படவில்லை'.
+Then offer a contextual reading as a possibility, never an exclusive definition.
+Do not infer a word's meaning from the poem being spiritual. Do not use 'அல்ல',
+'இல்லை', 'மட்டுமே' or 'பொருந்தாது' to exclude an unverified alternative meaning.
+Explain comparisons as comparisons; do not turn a positive instruction into a
+claim that this is the ONLY way to know something. Check the opening answer as
+well as the ending: a later disclaimer does not fix an unsupported assertion.
+"""
+TUTOR_CACHE_PROMPT = AKKA_TUTOR_SYSTEM_PROMPT + TAMIL_FINAL_CHECK + repr(sorted(GRADE_TEACHING_GUIDANCE.items()))
 
 
 def build_tutor_prompt(context: str, grade_level: int, subject: str) -> str:
-    return AKKA_TUTOR_SYSTEM_PROMPT.format(
+    prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(
         context=context, grade_level=grade_level, subject=subject,
         grade_guidance=GRADE_TEACHING_GUIDANCE[grade_level],
     )
+    if subject in ('Tamil', 'Advance Tamil', 'Advanced Tamil'):
+        prompt += TAMIL_FINAL_CHECK
+    return prompt
 
 # ==========================================
 # 2. THE QUIZ MASTER (For generate-quiz endpoint)

@@ -18,7 +18,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from prompts import AKKA_QUIZ_PROMPT, TUTOR_CACHE_PROMPT, build_tutor_prompt
 from image_security import download_chat_image
-from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query
+from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query, chat_model_options
 from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
 from textbook_retrieval import tamil_keyword_passages, TAMIL_SUBJECTS, named_work_query, clean_passage
@@ -501,7 +501,7 @@ INSTRUCTIONS:
             status = "interrupted"
             finish_reason = None
             try:
-                async for chunk in deepseek_llm.bind(max_tokens=MAX_REPLY_TOKENS).astream(messages):
+                async for chunk in deepseek_llm.bind(**chat_model_options(data.subject, search_query)).astream(messages):
                     finish_reason = (getattr(chunk, "response_metadata", None) or {}).get("finish_reason") or finish_reason
                     if chunk.usage_metadata:
                         for key in ("input_tokens", "output_tokens"):
