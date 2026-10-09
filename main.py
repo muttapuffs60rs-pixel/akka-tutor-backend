@@ -1,9 +1,11 @@
 # pyrefly: ignore [missing-import]
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string, time
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
+import hashlib, json
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi import FastAPI, HTTPException, Depends, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +23,9 @@ from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
 from textbook_retrieval import tamil_keyword_passages, TAMIL_SUBJECTS, named_work_query, clean_passage
 import razorpay
+import httpx
+from database_reliability import database_options, retry_database
+from chat_queue import ChatQueue, run_queued
 
 # ==========================================
 # 1. SETUP
@@ -30,7 +35,7 @@ load_dotenv()
 
 supabase: Client = create_client(
     os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_KEY")
+    os.getenv("SUPABASE_KEY"), options=database_options()
 )
 
 embeddings = HuggingFaceEmbeddings(
@@ -63,6 +68,7 @@ except Exception as e:
     razorpay_client = None
 
 app = FastAPI(title="Akka Tutor API")
+chat_queue = ChatQueue(active=20, waiting=40, timeout=25)
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,7 +76,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Answer-Source", "X-Answer-Id", "X-Chat-Turns-Used"],
+    expose_headers=["X-Answer-Source", "X-Answer-Id", "X-Chat-Turns-Used",
+                    "X-Request-Id", "X-Request-Replayed", "X-Chat-Error", "X-Queue-Wait-Ms", "Retry-After"],
 )
 
 # ==========================================
@@ -79,6 +86,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     session_id: UUID
+    client_request_id: Optional[UUID] = None
     question: str = Field(min_length=1, max_length=2000)
     subject: str = Field(min_length=1, max_length=100)
     grade_level: int = Field(ge=6, le=12)
@@ -120,12 +128,16 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     try:
-        user_resp = supabase.auth.get_user(token)
+        user_resp = retry_database(lambda: supabase.auth.get_user(token))
         if not user_resp or not user_resp.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         return user_resp.user.id
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+    except httpx.TransportError:
+        raise HTTPException(503, 'Sign-in service temporarily unavailable. Please retry.', headers={'Retry-After':'3'})
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Authentication failed. Please sign in again.")
 
 answer_cache = AnswerCache(supabase, os.getenv("ANSWER_CACHE_SYLLABUS_VERSION", ""), TUTOR_CACHE_PROMPT + "|concise-900-v1")
 app.include_router(create_answer_library_router(supabase, get_current_user))
@@ -276,24 +288,68 @@ async def current_profile(user_id: str = Depends(get_current_user)):
 # ==========================================
 
 @app.post("/ask")
-async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_user)):
-    reservation = await asyncio.to_thread(lambda: supabase.rpc("reserve_chat_request", {
-        "target_user_id": user_id, "target_session_id": str(data.session_id)
-    }).execute().data)
+async def chat_handler(data: ChatRequest, request: Request, user_id: str = Depends(get_current_user)):
+    return await run_queued(chat_queue, request, lambda: perform_chat(data, user_id))
+
+
+async def perform_chat(data: ChatRequest, user_id: str):
+    client_request_id = str(data.client_request_id or uuid4())
+    execution_id = str(uuid4())
+    payload_hash = hashlib.sha256(json.dumps(data.model_dump(mode='json', exclude={'client_request_id'}),
+                                            sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    parameters = {'target_user_id': user_id, 'target_session_id': str(data.session_id),
+                  'target_client_request_id': client_request_id, 'target_payload_hash': payload_hash,
+                  'target_execution_id': execution_id}
+    try:
+        reservation = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
+            'reserve_chat_request_v2', parameters).execute().data)
+    except Exception:
+        raise HTTPException(503, 'Unable to confirm this question. Retry the same request shortly.',
+                            headers={'Retry-After':'3', 'X-Request-Id':client_request_id})
     errors = {
         "profile": (404, "User profile not found"),
         "session": (404, "Conversation not found"),
         "conversation_limit": (409, "This conversation has reached 10 questions. Start a new chat."),
         "daily_limit": (403, "Daily question allowance reached. Try again tomorrow."),
+        "request_conflict": (409, "This request ID was already used for a different question."),
+        "invalid_request": (422, "Invalid request identity."),
     }
     if not reservation or "error" in reservation:
         status, message = errors.get((reservation or {}).get("error"), (503, "Usage limits unavailable"))
-        raise HTTPException(status_code=status, detail=message)
+        raise HTTPException(status_code=status, detail=message,
+                            headers={'X-Chat-Error':(reservation or {}).get('error','unavailable')})
     request_id = reservation["request_id"]
+    if reservation.get('same_execution') is False:
+        if reservation.get('response_text') is not None:
+            async def replay():
+                yield reservation['response_text']
+            headers = {'X-Request-Id':client_request_id, 'X-Request-Replayed':'true',
+                       'X-Answer-Source':reservation.get('response_source') or 'ai',
+                       'X-Chat-Turns-Used':str(reservation['turns_used'])}
+            if reservation.get('answer_cache_id'):
+                headers['X-Answer-Id'] = str(reservation['answer_cache_id'])
+            return StreamingResponse(replay(), media_type='text/plain', headers=headers)
+        if reservation.get('status') == 'processing' and not reservation.get('stale'):
+            raise HTTPException(409, 'Your question is still being answered. Please wait.',
+                                headers={'X-Chat-Error':'request_pending','Retry-After':'3'})
+        if reservation.get('status') != 'reserved' or reservation.get('stale'):
+            raise HTTPException(409, 'This request has already ended; it will not be charged again.',
+                                headers={'X-Chat-Error':'request_ended'})
+    try:
+        claim = await asyncio.to_thread(retry_database, lambda: supabase.rpc('claim_chat_generation', {
+            'target_user_id':user_id,'target_request_id':request_id,'target_execution_id':execution_id
+        }).execute().data)
+    except Exception:
+        raise HTTPException(503, 'Unable to confirm the tutor is ready. Retry the same request shortly.',
+                            headers={'Retry-After':'3','X-Request-Id':client_request_id})
+    if not claim or claim.get('claimed') is not True:
+        raise HTTPException(409, 'Your question is already being answered. Please wait.',
+                            headers={'X-Chat-Error':'request_pending','Retry-After':'3'})
     usage = {}
     vision_usage = {}
     answer_cache_id = None
     response_source = "ai"
+    answer_parts = []
 
     async def save_usage(status):
         # Missing metadata stays NULL: never report an interrupted request as free.
@@ -302,8 +358,12 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
                   "output_tokens": usage.get("output_tokens"),
                   "vision_input_tokens": vision_usage.get("input_tokens"),
                   "vision_output_tokens": vision_usage.get("output_tokens")}
+        if status in ('complete', 'cached', 'usage_missing'):
+            record['response_text'] = ''.join(answer_parts)
+            record['response_expires_at'] = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
         try:
-            await asyncio.to_thread(lambda: supabase.table("ai_chat_requests").update(record).eq("id", request_id).execute())
+            await asyncio.to_thread(retry_database, lambda: supabase.table("ai_chat_requests").update(record)
+                                    .eq("id", request_id).eq('execution_id', execution_id).execute())
         except Exception:
             # Keep the original reservation so an accounting failure cannot reopen quota.
             print(f"Usage reconciliation needed for request {request_id}")
@@ -380,6 +440,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
             answer_cache_id = cached["id"]
             usage.update(input_tokens=0, output_tokens=0)
             vision_usage.update(input_tokens=0, output_tokens=0)
+            answer_parts.append(cached['answer'])
             await save_usage("cached")
 
             async def cached_response():
@@ -387,6 +448,7 @@ async def chat_handler(data: ChatRequest, user_id: str = Depends(get_current_use
 
             return StreamingResponse(cached_response(), media_type="text/plain", headers={
                 "X-Answer-Source": "cache", "X-Answer-Id": str(answer_cache_id),
+                "X-Request-Id": client_request_id,
                 "X-Chat-Turns-Used": str(reservation["turns_used"]),
             })
 
@@ -437,7 +499,6 @@ INSTRUCTIONS:
         # Define the streaming generator
         async def response_generator():
             status = "interrupted"
-            answer_parts = []
             finish_reason = None
             try:
                 async for chunk in deepseek_llm.bind(max_tokens=MAX_REPLY_TOKENS).astream(messages):
@@ -448,7 +509,7 @@ INSTRUCTIONS:
                     if chunk.content:
                         answer_parts.append(chunk.content)
                         yield chunk.content
-                status = "complete" if usage else "usage_missing"
+                status = 'truncated' if finish_reason == 'length' else ("complete" if usage else "usage_missing")
                 # Never collect a truncated, failed, or context-dependent reply for sharing.
                 if cache_identity and finish_reason == "stop":
                     await asyncio.to_thread(answer_cache.save_candidate, cache_identity, "".join(answer_parts))
@@ -459,7 +520,8 @@ INSTRUCTIONS:
                 await asyncio.shield(save_usage(status))
 
         return StreamingResponse(response_generator(), media_type="text/plain",
-                                 headers={"X-Answer-Source": "ai", "X-Chat-Turns-Used": str(reservation["turns_used"])})
+                                 headers={"X-Answer-Source": "ai", "X-Chat-Turns-Used": str(reservation["turns_used"]),
+                                          "X-Request-Id":client_request_id})
 
     except BaseException as error:
         await asyncio.shield(save_usage("failed"))

@@ -4,7 +4,10 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
+import hashlib, json
+from datetime import datetime, timedelta, timezone
+from database_reliability import retry_database
 import traceback
 import unittest
 from unittest.mock import Mock
@@ -21,11 +24,12 @@ from answer_cache import eligible_question
 def load_chat():
     path = Path(__file__).resolve().parents[1] / 'main.py'
     nodes = [n for n in ast.parse(path.read_text(encoding='utf-8')).body
-             if getattr(n, 'name', '') in ('ChatRequest', 'chat_handler')]
+             if getattr(n, 'name', '') in ('ChatRequest', 'perform_chat')]
     for node in nodes:
         node.decorator_list = []
     env = dict(globals(), get_current_user=lambda: None)
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), 'exec'), env)
+    env['chat_handler'] = env['perform_chat']
     return env
 
 
@@ -34,6 +38,9 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
         self.env = load_chat()
         self.db = Mock()
         self.db.rpc.return_value.execute.return_value.data = {'request_id': 'request', 'turns_used': 1}
+        claim = Mock()
+        claim.execute.return_value.data = {'claimed': True}
+        self.db.rpc.side_effect = lambda name, args: claim if name == 'claim_chat_generation' else self.db.rpc.return_value
         self.env['answer_cache'] = Mock()
         self.env['answer_cache'].lookup.return_value = None
         self.env.update(supabase=self.db, get_context=Mock(return_value='x' * 50000))

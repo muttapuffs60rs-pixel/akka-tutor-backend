@@ -188,3 +188,32 @@ python -m unittest discover -s tests
 Retrieval checks confirm supporting passages within the context budget, not that
 every generated explanation is correct. Review live answers against the books
 before approving them in the answer library, especially literary interpretations.
+
+## Connection reliability and chat admission
+
+Apply `supabase_chat_reliability.sql` before this backend release. It adds a
+service-role-only `reserve_chat_request_v2` RPC; the original RPC remains available
+for old releases. A stable client request UUID and hash bind each submission to
+one user, conversation and payload. Database retries reuse the execution UUID.
+Concurrent duplicate HTTP requests cannot start a second generation. Completed
+responses can be replayed for 24 hours without another quota increment or AI call.
+An hourly pg_cron job removes expired replay text; accounting and identity remain.
+Terminal/expired requests are not regenerated automatically. Interrupted AI streams
+are not retried: the provider may already have performed billable work.
+
+Supabase uses a TLS-verified HTTP/1.1 pool (40 connections, 20 keepalive, 15-second
+read/write timeout, 5-second connect/pool timeout). Only reads, the idempotent
+reservation RPC and deterministic usage updates use the bounded transport retry.
+Arbitrary writes, payment actions and AI generation are not automatically retried.
+
+Each application process admits 20 chats, holds at most 40 waiters and waits at
+most 25 seconds. Admission precedes quota reservation. Overload returns 503 with
+Retry-After; waiting disconnects and all response exits release capacity. Slots
+cover preparation and the full stream, not just response headers. This is a
+per-process limit; multiple workers/instances multiply it and require fresh load
+testing. Authentication runs before admission. No subscription limits are raised.
+
+The web client uses one request ID across up to four transport/admission attempts,
+shows a waiting message, and distinguishes an in-progress duplicate from the
+10-question conversation limit. Old clients without a request ID still receive
+safe database retries inside one HTTP request, but cannot replay across HTTP calls.
