@@ -16,6 +16,8 @@ _CACHE = OrderedDict()
 _LOCK = threading.Lock()
 CACHE_SECONDS = 900
 MAX_CACHED_BOOKS = 8
+GRAMMAR_ROOTS = ('பெயரெச்ச', 'வினையெச்ச', 'எழுவாய்', 'விளி',
+                 'தொகாநிலை', 'தொகைநிலை', 'வேற்றுமை', 'வினைத்தொகை')
 
 _IGNORE = set('பத்தாம் பதினொன்றாம் பன்னிரண்டாம் ஆறாம் ஏழாம் எட்டாம் ஒன்பதாம் '
               'வகுப்பு வகுப்பில் சிறப்புத் தமிழ் தமிழில் பாடநூலில் பாடநூல் உள்ள '
@@ -47,6 +49,9 @@ def compact(text):
 
 def stem(word):
     # Match joined/spaced compounds and common title/author inflections.
+    for root in GRAMMAR_ROOTS:
+        if word.startswith(root):
+            return root
     word = re.sub(r'த்தொடர்.*$', '', word)
     word = re.sub(r'த்$', '', word)
     for ending, replacement in [('ரின்', 'ர்'), ('ருடைய', 'ர்'), ('த்தின்', 'ம்'),
@@ -65,7 +70,16 @@ def tamil_terms(question):
     return list(dict.fromkeys(tokens(question)))[:24]
 
 
+def grammar_query(question):
+    # Classify the requested task, not words inside the student's examples.
+    outside = re.sub(r'[“"‘\x27][^”"’\x27]+[”"’\x27]', ' ', question)
+    return bool(re.search(r'இலக்கண|பெயரெச்ச|வினையெச்ச|எழுவாய்|விளித்தொடர்|'
+                          r'தொகாநிலை|தொகைநிலை|வேற்றுமை|வினைத்தொகை|grammar', outside, re.I))
+
+
 def named_work_query(question):
+    if grammar_query(question):
+        return False
     return bool(re.search(r'[“"‘].+?[”"’]|செய்யு|பாடல|poem|poet', question, re.I))
 
 
@@ -90,8 +104,14 @@ class TamilBookIndex:
 
     def search(self, question, count=6):
         terms = tamil_terms(question)
+        grammar = grammar_query(question)
+        grammar_terms = set(terms) & set(GRAMMAR_ROOTS) if grammar else set()
         phrases = [compact(p) for p in re.findall(r'[“"‘\x27]([^”"’\x27]+)[”"’\x27]', question)
                    if len(compact(p)) >= 10]
+        if grammar:
+            # Novel examples need the grammatical definitions, not an exact
+            # quotation match. Preserve strict matching for literary works.
+            phrases = []
         phrase_matches = [any(p in body or p in title for p in phrases)
                           for _, _, _, body, title in self.rows]
         if phrases and not any(phrase_matches):
@@ -99,6 +119,8 @@ class TamilBookIndex:
         ranked = []
         for i, (row, body, title, compact_body, compact_title) in enumerate(self.rows):
             matched = set(t for t in terms if t in body or t in title)
+            if grammar_terms and not grammar_terms.intersection(matched):
+                continue
             if not matched and not phrase_matches[i]:
                 continue
             score = sum(math.log(1 + len(self.rows) / (1 + self.frequency[t])) *

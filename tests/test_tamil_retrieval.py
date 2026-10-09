@@ -1,9 +1,22 @@
 import unittest
 from unittest.mock import Mock, call
-from textbook_retrieval import tamil_terms, tamil_keyword_passages, TamilBookIndex, clean_passage, _CACHE
+from textbook_retrieval import tamil_terms, tamil_keyword_passages, TamilBookIndex, clean_passage, named_work_query, _CACHE
 
 
 class TamilRetrievalTests(unittest.TestCase):
+    def test_quoted_new_grammar_examples_retrieve_definitions(self):
+        definition = 'முற்றுப் பெறாத வினை, பெயர்ச்சொல்லைக் கொண்டு முடிவது பெயரெச்சத்தொடர் எனப்படும். எடுத்துக்காட்டு கேட்ட பாடல்.'
+        index = TamilBookIndex([{'content':definition}])
+        for question in ['“வந்த மாணவன்” பெயரெச்சத் தொடர் என்பதை விளக்குக',
+                         'இலக்கணம்: “புதிய மாணவன் வந்தான்” பெயரெச்சம் பற்றி விளக்குக']:
+            self.assertFalse(named_work_query(question))
+            self.assertEqual([r['content'] for r in index.search(question)], [definition])
+
+    def test_grammar_word_inside_unknown_title_does_not_bypass_work_match(self):
+        index = TamilBookIndex([{'content':'பெயரெச்சம் என்பது முற்றுப் பெறாத வினை பெயரைக் கொண்டு முடிவது ஆகும்.'}])
+        self.assertTrue(named_work_query('“பெயரெச்சம் மலரும் விண்மீன்” செய்யுளை விளக்குக'))
+        self.assertEqual(index.search('“பெயரெச்சம் மலரும் விண்மீன்” செய்யுளை விளக்குக'), [])
+
     def setUp(self):
         _CACHE.clear()
     def test_compound_terms_and_commands(self):
