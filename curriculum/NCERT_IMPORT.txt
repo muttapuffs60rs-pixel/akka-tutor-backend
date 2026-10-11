@@ -1,0 +1,55 @@
+NCERT English-medium import, 11 October 2026
+Source: https://ncert.nic.in/textbook.php
+
+The manifest records the official current catalogue, book codes and downloaded
+chapter IDs. 109 of 131 English-medium volumes were downloadable. The 22 volumes
+with empty chapter_ids have broken individual-PDF and complete-archive links.
+They are not exposed as available subjects in the application.
+
+Download directory: ../ncert-books/<class>/<book code>/<chapter PDF>
+Download audit: ../ncert-download-report.json
+Archive recovery audit: ../ncert-archive-report.json
+Ingestion verification: ../ncert-import-report.json
+
+Apply supabase_board_curriculum.sql before deploying the backend and importing.
+Existing documents and sessions default to board=tn. New NCERT records explicitly
+use board=cbse, language=en, grade_level, subject, book_code and source_url.
+The old hybrid_match_documents RPC is restricted to tn for old clients.
+The new match_board_documents RPC filters board, class and subject before ranking.
+Exact matches, metadata enrichment and Tamil lexical lookup are also board-scoped.
+The backend checks a conversation's stored board/class/subject before retrieval;
+answer cache keys and retrieval caches include board. Old chats remain tn.
+
+Run import_ncert.py with --books and --report paths. It uses the same multilingual
+MiniLM embedding model as the live backend, stable board-specific UUIDs and
+upserts, then verifies every uploaded chapter by document IDs. PDFs are parsed
+page by page; textless/invalid chapters fail rather than count as successful.
+This is text retrieval: diagrams are not interpreted during ingestion.
+
+Install requirements-ingest.txt in the ingestion environment. Cache the model
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 before an offline run.
+Example commands from the backend directory:
+  python download_ncert.py --output ../ncert-download
+  python import_ncert.py --books ../ncert-download/books --report curriculum/ncert_ingestion_report.json
+  python verify_ncert.py
+The downloader retries the unavailable entries too, so an official link repaired
+later can be detected. Update their chapter_ids only after validating the PDFs.
+Uploads and verification retry transient database errors. Checkpoints are atomic;
+restarting skips verified unchanged chapters, and stable IDs prevent duplicates.
+
+English books sometimes use non-contiguous chapter numbers for prose/poetry.
+chapter_ids includes those extra files recovered from official complete-book ZIPs.
+The catalogue count alone must not be treated as sequential PDF numbering.
+
+Completed import: 109 volumes, 933 chapter PDFs, 19,185 PDF pages and 95,670
+searchable passages. Every expected chapter and stored record count is verified.
+The existing 132,641 State Board records are unchanged. Live checks retrieve
+CBSE content for every class and isolate identical Class 9 Science queries by
+board; legacy RPC callers continue to return only State Board material.
+See ncert_ingestion_report.json and ncert_live_verification.json for the audit.
+
+Validation: 66 backend tests, 39 Flutter tests and the release web build passed.
+Browser checks covered first-time board selection, class selection, a live CBSE
+answer and retaining the original CBSE Class 9 curriculum when reopening a chat
+after changing the profile to State Board. A live cross-board conversation
+request returned HTTP 409 before generation.

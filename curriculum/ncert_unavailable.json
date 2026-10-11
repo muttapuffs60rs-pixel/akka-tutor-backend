@@ -1,0 +1,156 @@
+[
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Cashier",
+    "code": "ievc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Store Operations Assistant",
+    "code": "ieva1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Solanceous Crop Cultivator",
+    "code": "ievs1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Assistant Beauty Therapist",
+    "code": "ievt1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Animal Health Workers (Agriculture)",
+    "code": "ievw1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Hand Embroiderer (Addawala)",
+    "code": "ieve1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Hand Embroiderer",
+    "code": "ievh1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Plumber General",
+    "code": "iepg1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "IT Domestic Data Entry Operator",
+    "code": "ieeo1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 9,
+    "subject": "Vocational",
+    "title": "Employability Skill",
+    "code": "iees1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "Floriculturist- Protected Cultivation",
+    "code": "kepc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "Vision Technician",
+    "code": "kevt1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "Floriculturist",
+    "code": "keoc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "General Duty Assistant",
+    "code": "keda1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "Dairy Farmer Enterpreneur",
+    "code": "kedf1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Vocational",
+    "title": "Floriculturist",
+    "code": "kefc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Heritage Crafts",
+    "title": "Living Craft Traditions of India",
+    "code": "kehc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Graphics design",
+    "title": "The story of graphic design",
+    "code": "kegd1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Computers and Communication Technology",
+    "title": "CCT Part-I",
+    "code": "kect1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 11,
+    "subject": "Computers and Communication Technology",
+    "title": "CCT Part-II",
+    "code": "kect2",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 12,
+    "subject": "Heritage Crafts",
+    "title": "Craft Tradition of India",
+    "code": "lehc1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  },
+  {
+    "grade": 12,
+    "subject": "New Age Graphics Design",
+    "title": "New Age Graphics Design",
+    "code": "legd1",
+    "reason": "Official chapter PDFs and complete-book archive return HTTP 404"
+  }
+]

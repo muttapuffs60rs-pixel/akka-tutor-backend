@@ -1,4 +1,9 @@
 """Resumable NCERT English-medium ingestion with board-scoped verification."""
+print("Loading ingestion dependencies", flush=True)
+import ssl
+import httpx
+from supabase.lib.client_options import SyncClientOptions
+from huggingface_hub import set_client_factory
 import argparse
 import hashlib
 import json
@@ -18,7 +23,7 @@ ROOT = Path(__file__).parent
 def parse(path, book, chapter):
     rows = []
     doc = pymupdf.open(path)
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
     total = bad = 0
     for page_number, page in enumerate(doc, 1):
         text = page.get_text(sort=True).strip()
@@ -43,58 +48,81 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--books', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
-    parser.add_argument('--watch', action='store_true')
     args = parser.parse_args()
     load_dotenv(ROOT / '.env')
-    db = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
+    print('Connecting database', flush=True)
+    ssl_context = ssl.create_default_context()
+    set_client_factory(lambda: httpx.Client(verify=ssl_context, follow_redirects=True, timeout=60))
+    db = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'], options=SyncClientOptions(httpx_client=httpx.Client(verify=ssl_context, timeout=120), auto_refresh_token=False, persist_session=False))
     books = json.loads((ROOT / 'curriculum/ncert_manifest.json').read_text())
     report = json.loads(args.report.read_text()) if args.report.exists() else {}
+    print('Loading embedding runtime', flush=True)
     import torch
     from sentence_transformers import SentenceTransformer
     torch.set_num_threads(2)
     model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
                                 local_files_only=True, device='cuda' if torch.cuda.is_available() else 'cpu')
-    while True:
+    if torch.cuda.is_available():
+        import numpy as np
+        probe = ['A plant needs sunlight.', 'Numbers and equations describe patterns.']
+        reference = model.encode(probe)
+        model.half()
+        candidate = model.encode(probe).astype(np.float32)
+        cosine = (reference*candidate).sum(1)/(np.linalg.norm(reference,axis=1)*np.linalg.norm(candidate,axis=1))
+        if min(cosine) < .9999:
+            raise RuntimeError('Embedding precision verification failed')
+    print('Embedding model ready', flush=True)
+    from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+
+    def retry(operation):
+        for attempt in range(5):
+            try:
+                return operation()
+            except Exception:
+                if attempt == 4:
+                    raise
+                time.sleep(2**attempt)
+
+    def upload(book, chapter, key, rows, pages, digest):
+        for start in range(0, len(rows), 200):
+            batch = rows[start:start+200]
+            retry(lambda: db.table('documents').upsert(batch, on_conflict='id', ignore_duplicates=True).execute())
+        stored = []
+        # Use primary-key lookups rather than sorting/scanning the growing corpus.
+        for offset in range(0, len(rows), 100):
+            ids = [row['id'] for row in rows[offset:offset+100]]
+            result = retry(lambda: db.table('documents').select('id').eq('board','cbse')
+                           .in_('id',ids).execute().data)
+            stored.extend(r['id'] for r in result)
+        if set(r['id'] for r in rows)-set(stored):raise RuntimeError('Verification failed: '+key)
+        return key,dict(grade=book['grade'],subject=book['subject'],book=book['title'],pages=pages,chunks=len(rows),sha256=digest,verified=True)
+
+    def record(futures):
+        for future in futures:
+            key,result=future.result()
+            report[key]=result
+            temporary = args.report.with_suffix('.tmp')
+            temporary.write_text(json.dumps(report,indent=2),encoding='utf-8')
+            temporary.replace(args.report)
+            print('VERIFIED',key,result['chunks'],'chunks; total chapters',len(report),flush=True)
+
+    # Bound uploads to four workers; model inference stays on the main thread.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        pending=set()
         for book in books:
-            for chapter in range(1, book['chapters'] + 1):
-                key = f"{book['code']}{chapter:02}"
-                path = args.books / str(book['grade']) / book['code'] / (key + '.pdf')
-                if not path.exists():
-                    continue
-                digest = hashlib.sha256(path.read_bytes()).hexdigest()
-                if report.get(key, {}).get('sha256') == digest:
-                    continue
-                rows, pages = parse(path, book, chapter)
-                for start in range(0, len(rows), 100):
-                    batch = rows[start:start + 100]
-                    vectors = model.encode([r['content'] for r in batch], batch_size=32, show_progress_bar=False)
-                    for row, vector in zip(batch, vectors):
-                        row['embedding'] = vector.tolist()
-                    for attempt in range(5):
-                        try:
-                            db.table('documents').upsert(batch, on_conflict='id', ignore_duplicates=True).execute()
-                            break
-                        except Exception:
-                            if attempt == 4:
-                                raise
-                            time.sleep(2 ** attempt)
-                stored = []
-                for offset in range(0, len(rows) + 1000, 1000):
-                    result = (db.table('documents').select('id').eq('board', 'cbse')
-                              .eq('book_code', book['code']).eq('section_name', f"{book['code']} chapter {chapter}")
-                              .order('id').range(offset, offset + 999).execute().data)
-                    stored.extend(r['id'] for r in result)
-                    if len(result) < 1000:
-                        break
-                if set(r['id'] for r in rows) - set(stored):
-                    raise RuntimeError('Verification failed for ' + key)
-                report[key] = dict(grade=book['grade'], subject=book['subject'], book=book['title'],
-                                   pages=pages, chunks=len(rows), sha256=digest, verified=True)
-                args.report.write_text(json.dumps(report, indent=2), encoding='utf-8')
-                print('VERIFIED', key, len(rows), 'chunks; total chapters', len(report), flush=True)
-        if not args.watch or len(report) == sum(b['chapters'] for b in books):
-            break
-        time.sleep(15)
+            for chapter in book.get('chapter_ids',range(1,book['chapters']+1)):
+                key=f"{book['code']}{chapter:02}"
+                path=args.books/str(book['grade'])/book['code']/(key+'.pdf')
+                if not path.exists():raise FileNotFoundError(path)
+                digest=hashlib.sha256(path.read_bytes()).hexdigest()
+                if report.get(key,{}).get('verified') and report[key].get('sha256')==digest:continue
+                rows,pages=parse(path,book,chapter)
+                vectors=model.encode([r['content'] for r in rows],batch_size=32,show_progress_bar=False)
+                for row,vector in zip(rows,vectors):row['embedding']=vector.tolist()
+                pending.add(pool.submit(upload,book,chapter,key,rows,pages,digest))
+                if len(pending)>=8:
+                    done,pending=wait(pending,return_when=FIRST_COMPLETED);record(done)
+        if pending:record(wait(pending)[0])
 
 
 if __name__ == '__main__':

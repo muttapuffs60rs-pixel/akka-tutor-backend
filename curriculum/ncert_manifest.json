@@ -4,916 +4,2259 @@
     "subject": "Vocational Education",
     "title": "Kaushal Bodh",
     "code": "fekb1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 6,
     "subject": "Physical Education and Well Being",
     "title": "Khel Yatra",
     "code": "feky1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 6,
     "subject": "English",
     "title": "Poorvi",
     "code": "fepr1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 6,
     "subject": "Mathematics",
     "title": "Ganita Prakash",
     "code": "fegp1",
-    "chapters": 10
+    "chapters": 10,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
   },
   {
     "grade": 6,
     "subject": "Social Science",
     "title": "Exploring Society India and Beyond",
     "code": "fees1",
-    "chapters": 14
+    "chapters": 14,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
   },
   {
     "grade": 6,
     "subject": "Science",
     "title": "Curiosity",
     "code": "fecu1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 6,
     "subject": "Arts",
     "title": "Kriti-I",
     "code": "fekr1",
-    "chapters": 22
+    "chapters": 22,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22
+    ]
   },
   {
     "grade": 7,
     "subject": "Mathematics",
     "title": "Ganita Prakash",
     "code": "gegp1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 7,
     "subject": "Mathematics",
     "title": "Ganita Prakash-II",
     "code": "gegp2",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 7,
     "subject": "Arts",
     "title": "Kriti",
     "code": "gekr1",
-    "chapters": 20
+    "chapters": 20,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ]
   },
   {
     "grade": 7,
     "subject": "Science",
     "title": "Curiosity",
     "code": "gecu1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 7,
     "subject": "English",
     "title": "Poorvi",
     "code": "gepr1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 7,
     "subject": "Social Science",
     "title": "Exploring Society India and Beyond Part-I",
     "code": "gees1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 7,
     "subject": "Social Science",
     "title": "Exploring Society India and Beyond Part-II",
     "code": "gees2",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 7,
     "subject": "Physical Education and Well Being",
     "title": "Khel Yatra",
     "code": "geky1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 7,
     "subject": "Vocational Education",
     "title": "Kaushal Bodh",
     "code": "gekb1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 8,
     "subject": "Mathematics",
     "title": "Ganita Prakash Part-I",
     "code": "hegp1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 8,
     "subject": "Mathematics",
     "title": "Ganita Prakash Part-II",
     "code": "hegp2",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 8,
     "subject": "Arts",
     "title": "Kriti",
     "code": "hekr1",
-    "chapters": 19
+    "chapters": 19,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ]
   },
   {
     "grade": 8,
     "subject": "Science",
     "title": "Curiosity",
     "code": "hecu1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 8,
     "subject": "English",
     "title": "Poorvi",
     "code": "hepr1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 8,
     "subject": "Social Science",
     "title": "Exploring Society India and Beyond Part-I",
     "code": "hees1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 8,
     "subject": "Social Science",
     "title": "Exploring Society India and Beyond Part-II",
     "code": "hees2",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 8,
     "subject": "Physical Education and Well Being",
     "title": "Khel Yatra",
     "code": "heky1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 8,
     "subject": "Vocational Education",
     "title": "Kaushal Bodh",
     "code": "hekb1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 9,
     "subject": "English",
     "title": "Kaveri",
     "code": "iebe1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 9,
     "subject": "Mathematics",
     "title": "Ganita Manjari",
     "code": "iemh1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 9,
     "subject": "Mathematics",
     "title": "Ganita Manjari PART-II",
     "code": "iemh2",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 9,
     "subject": "Science",
     "title": "Exploration",
     "code": "iesc1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 9,
     "subject": "Social Science",
     "title": "Understanding Society India and Beyond PART-I",
     "code": "iest1",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
   },
   {
     "grade": 9,
     "subject": "Social Science",
     "title": "Understanding Society India and Beyond PART-II",
     "code": "iest2",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 9,
     "subject": "Physical Education and Well Being",
     "title": "Khel Praveen",
     "code": "iehp1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 9,
     "subject": "Skill Education",
     "title": "Kaushal Vikas",
     "code": "iekv1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Cashier",
     "code": "ievc1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Store Operations Assistant",
     "code": "ieva1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Solanceous Crop Cultivator",
     "code": "ievs1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Assistant Beauty Therapist",
     "code": "ievt1",
-    "chapters": 3
+    "chapters": 3,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Animal Health Workers (Agriculture)",
     "code": "ievw1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Hand Embroiderer (Addawala)",
     "code": "ieve1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Hand Embroiderer",
     "code": "ievh1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Plumber General",
     "code": "iepg1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "IT Domestic Data Entry Operator",
     "code": "ieeo1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Vocational",
     "title": "Employability Skill",
     "code": "iees1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 9,
     "subject": "Arts",
     "title": "Madhurima",
     "code": "iemr1",
-    "chapters": 17
+    "chapters": 17,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ]
   },
   {
     "grade": 10,
     "subject": "Mathematics",
     "title": "Mathematics",
     "code": "jemh1",
-    "chapters": 14
+    "chapters": 14,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
   },
   {
     "grade": 10,
     "subject": "Science",
     "title": "Science",
     "code": "jesc1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 10,
     "subject": "English",
     "title": "First Flight",
     "code": "jeff1",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
   },
   {
     "grade": 10,
     "subject": "English",
     "title": "Foot Prints Without feet Supp. Reader",
     "code": "jefp1",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
   },
   {
     "grade": 10,
     "subject": "English",
     "title": "Words and Expressions  2",
     "code": "jewe2",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 10,
     "subject": "Social Science",
     "title": "Contemporary India ",
     "code": "jess1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 10,
     "subject": "Social Science",
     "title": "Understanding Economic Development",
     "code": "jess2",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 10,
     "subject": "Social Science",
     "title": "India and the Contemporary World-II ",
     "code": "jess3",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 10,
     "subject": "Social Science",
     "title": "Democratic Politics",
     "code": "jess4",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 10,
     "subject": "Health and Physical Education",
     "title": "Health and Physical Education",
     "code": "jehp1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      9,
+      10,
+      11,
+      12
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 11,
     "subject": "Accountancy",
     "title": "Financial Accounting-I",
     "code": "keac1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 11,
     "subject": "Accountancy",
     "title": "Accountancy-II",
     "code": "keac2",
-    "chapters": 2
+    "chapters": 2,
+    "chapter_ids": [
+      1,
+      2
+    ]
   },
   {
     "grade": 11,
     "subject": "Business Studies",
     "title": "Business Studies",
     "code": "kebs1",
-    "chapters": 11
+    "chapters": 11,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
   },
   {
     "grade": 11,
     "subject": "Chemistry",
     "title": "Chemistry Part-I",
     "code": "kech1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 11,
     "subject": "Chemistry",
     "title": "Chemistry Part II",
     "code": "kech2",
-    "chapters": 3
+    "chapters": 3,
+    "chapter_ids": [
+      1,
+      2,
+      3
+    ]
   },
   {
     "grade": 11,
     "subject": "Mathematics",
     "title": "Mathematics",
     "code": "kemh1",
-    "chapters": 14
+    "chapters": 14,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "Floriculturist- Protected Cultivation",
     "code": "kepc1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "Vision Technician",
     "code": "kevt1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "Floriculturist",
     "code": "keoc1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "General Duty Assistant",
     "code": "keda1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "Dairy Farmer Enterpreneur",
     "code": "kedf1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Vocational",
     "title": "Floriculturist",
     "code": "kefc1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Biology",
     "title": "Biology",
     "code": "kebo1",
-    "chapters": 19
+    "chapters": 19,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ]
   },
   {
     "grade": 11,
     "subject": "Home Science",
     "title": "Human Ecology and Family Sciences Part I ",
     "code": "kehe1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 11,
     "subject": "Home Science",
     "title": "Human Ecology and Family Sciences Part II ",
     "code": "kehe2",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 11,
     "subject": "Psychology",
     "title": "Introduction to Psychology",
     "code": "kepy1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Economics",
     "title": "Indian Economic Development",
     "code": "keec1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Economics",
     "title": "Statistics for Economics",
     "code": "kest1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Geography",
     "title": "Fundamental of Physical Geography",
     "code": "kegy2",
-    "chapters": 14
+    "chapters": 14,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
   },
   {
     "grade": 11,
     "subject": "Geography",
     "title": "Pratical Work in Geography",
     "code": "kegy3",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 11,
     "subject": "Geography",
     "title": "India Physical Environment",
     "code": "kegy1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 11,
     "subject": "Physics",
     "title": "Physics Part-I",
     "code": "keph1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 11,
     "subject": "Physics",
     "title": "Physics Part-II",
     "code": "keph2",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 11,
     "subject": "Sociology",
     "title": "Introducing Sociology",
     "code": "kesy1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 11,
     "subject": "Sociology",
     "title": "Understanding Society",
     "code": "kesy2",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 11,
     "subject": "English",
     "title": "Woven Words",
     "code": "keww1",
-    "chapters": 27
+    "chapters": 27,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37
+    ]
   },
   {
     "grade": 11,
     "subject": "English",
     "title": "Hornbill",
     "code": "kehb1",
-    "chapters": 14
+    "chapters": 14,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ]
   },
   {
     "grade": 11,
     "subject": "English",
     "title": "Snapshots Suppl.Reader English",
     "code": "kesp1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 11,
     "subject": "Political Science",
     "title": "Political Theory",
     "code": "keps1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Political Science",
     "title": "India Constitution at Work",
     "code": "keps2",
-    "chapters": 10
+    "chapters": 10,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
   },
   {
     "grade": 11,
     "subject": "History",
     "title": "Themes in World History",
     "code": "kehs1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 11,
     "subject": "Heritage Crafts",
     "title": "Living Craft Traditions of India",
     "code": "kehc1",
-    "chapters": 10
+    "chapters": 10,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Graphics design",
     "title": "The story of graphic design",
     "code": "kegd1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Computers and Communication Technology",
     "title": "CCT Part-I",
     "code": "kect1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Computers and Communication Technology",
     "title": "CCT Part-II",
     "code": "kect2",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": []
   },
   {
     "grade": 11,
     "subject": "Fine Art",
     "title": "An Introduction to Indian Art Part-I",
     "code": "kefa1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Informatics Practices",
     "title": "Informatics Practices",
     "code": "keip1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 11,
     "subject": "Biotechnology",
     "title": "Biotechnology",
     "code": "kebt1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
   },
   {
     "grade": 11,
     "subject": "Computer Science",
     "title": "Computer Science",
     "code": "kecs1",
-    "chapters": 11
+    "chapters": 11,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
   },
   {
     "grade": 11,
     "subject": "Health and Physical Education",
     "title": "Health and Physical Education",
     "code": "kehp1",
-    "chapters": 11
+    "chapters": 11,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
   },
   {
     "grade": 11,
     "subject": "Knowledge Traditions Practices of India",
     "title": "Knowledge Traditions Practices of India",
     "code": "keks1",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
   },
   {
     "grade": 12,
     "subject": "Accountancy",
     "title": "Accountancy-I",
     "code": "leac1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "Accountancy",
     "title": "Accountancy Part-II",
     "code": "leac2",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 12,
     "subject": "Accountancy",
     "title": "Computerised Accounting System",
     "code": "leca1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "Mathematics",
     "title": "Mathematics Part-I",
     "code": "lemh1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 12,
     "subject": "Mathematics",
     "title": "Mathematics Part-II",
     "code": "lemh2",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Physics",
     "title": "Physics Part-I",
     "code": "leph1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Physics",
     "title": "Physics Part-II",
     "code": "leph2",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 12,
     "subject": "English",
     "title": "Kaliedoscope",
     "code": "lekl1",
-    "chapters": 21
+    "chapters": 21,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      31,
+      32
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      31,
+      32
+    ]
   },
   {
     "grade": 12,
     "subject": "English",
     "title": "Flamingo",
     "code": "lefl1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
   },
   {
     "grade": 12,
     "subject": "English",
     "title": "Vistas",
     "code": "levt1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "archive_chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 12,
     "subject": "Biotechnology",
     "title": "Biotechnology",
     "code": "lebt1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 12,
     "subject": "Biology",
     "title": "Biology",
     "code": "lebo1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 12,
     "subject": "History",
     "title": "Themes in Indian History-I",
     "code": "lehs1",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "History",
     "title": "Themes in Indian History-II",
     "code": "lehs2",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "History",
     "title": "Themes in Indian History-III",
     "code": "lehs3",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "Geography",
     "title": "Fundamentals of Human Geography",
     "code": "legy1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Geography",
     "title": "Practical Work in Geography Part II",
     "code": "legy3",
-    "chapters": 4
+    "chapters": 4,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4
+    ]
   },
   {
     "grade": 12,
     "subject": "Geography",
     "title": "India -People And Economy",
     "code": "legy2",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
   },
   {
     "grade": 12,
     "subject": "Psychology",
     "title": "Psychology",
     "code": "lepy1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Sociology",
     "title": "Indian Society",
     "code": "lesy1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Sociology",
     "title": "Social Change and Development in India",
     "code": "lesy2",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Chemistry",
     "title": "Chemistry-I",
     "code": "lech1",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 12,
     "subject": "Chemistry",
     "title": "Chemistry-II",
     "code": "lech2",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 12,
     "subject": "Political Science",
     "title": "Contemporary World Politics",
     "code": "leps1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Political Science",
     "title": "Politics in India Since Independence",
     "code": "leps2",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Home Science",
     "title": "Human Ecology and Family Sciences Part I ",
     "code": "lehe1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Home Science",
     "title": "Human Ecology and Family Sciences Part II ",
     "code": "lehe2",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   {
     "grade": 12,
     "subject": "Economics",
     "title": "Introductory Microeconomics",
     "code": "leec2",
-    "chapters": 5
+    "chapters": 5,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   {
     "grade": 12,
     "subject": "Economics",
     "title": "Introductory Macroeconomics",
     "code": "leec1",
-    "chapters": 6
+    "chapters": 6,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
   },
   {
     "grade": 12,
     "subject": "Business Studies",
     "title": "Business Studies-I",
     "code": "lebs1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Business Studies",
     "title": "Business Studies-II",
     "code": "lebs2",
-    "chapters": 3
+    "chapters": 3,
+    "chapter_ids": [
+      1,
+      2,
+      3
+    ]
   },
   {
     "grade": 12,
     "subject": "Heritage Crafts",
     "title": "Craft Tradition of India",
     "code": "lehc1",
-    "chapters": 9
+    "chapters": 9,
+    "chapter_ids": []
   },
   {
     "grade": 12,
     "subject": "New Age Graphics Design",
     "title": "New Age Graphics Design",
     "code": "legd1",
-    "chapters": 12
+    "chapters": 12,
+    "chapter_ids": []
   },
   {
     "grade": 12,
     "subject": "Fine Art",
     "title": "An Introduction to Indian Art Part-II",
     "code": "lefa1",
-    "chapters": 8
+    "chapters": 8,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
   },
   {
     "grade": 12,
     "subject": "Computer Science",
     "title": "Computer Science",
     "code": "lecs1",
-    "chapters": 13
+    "chapters": 13,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ]
   },
   {
     "grade": 12,
     "subject": "Informatics Practices",
     "title": "Informatics Practices",
     "code": "leip1",
-    "chapters": 7
+    "chapters": 7,
+    "chapter_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   }
 ]

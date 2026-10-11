@@ -1,0 +1,70 @@
+[
+  {
+    "grade": 6,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 6406,
+    "state_board_chunks_unchanged": 5922,
+    "verified": true
+  },
+  {
+    "grade": 7,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 8132,
+    "state_board_chunks_unchanged": 6217,
+    "verified": true
+  },
+  {
+    "grade": 8,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 8209,
+    "state_board_chunks_unchanged": 7429,
+    "verified": true
+  },
+  {
+    "grade": 9,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 7949,
+    "state_board_chunks_unchanged": 8288,
+    "verified": true
+  },
+  {
+    "grade": 10,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 6685,
+    "state_board_chunks_unchanged": 11554,
+    "verified": true
+  },
+  {
+    "grade": 11,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 29528,
+    "state_board_chunks_unchanged": 45146,
+    "verified": true
+  },
+  {
+    "grade": 12,
+    "board": "cbse",
+    "matches": 5,
+    "chunks": 28761,
+    "state_board_chunks_unchanged": 48085,
+    "verified": true
+  },
+  {
+    "grade": 9,
+    "subject": "Science",
+    "board": "tn",
+    "same_query_isolated": true
+  },
+  {
+    "grade": 9,
+    "subject": "Science",
+    "board": "cbse",
+    "same_query_isolated": true
+  }
+]

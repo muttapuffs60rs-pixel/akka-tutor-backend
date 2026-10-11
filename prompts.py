@@ -124,7 +124,15 @@ Explain comparisons as comparisons; do not turn a positive instruction into a
 claim that this is the ONLY way to know something. Check the opening answer as
 well as the ending: a later disclaimer does not fix an unsupported assertion.
 """
-TUTOR_CACHE_PROMPT = AKKA_TUTOR_SYSTEM_PROMPT + TAMIL_FINAL_CHECK + repr(sorted(GRADE_TEACHING_GUIDANCE.items()))
+CBSE_EVIDENCE_CHECK = """
+Use only the selected CBSE/NCERT textbook evidence. Never substitute State Board content.
+Use the supplied passage metadata for the source book and chapter. NCERT pages can
+contain sidebars referring to books from earlier grades: those references do not
+change the selected class or the source book. Do not cite a sidebar's book title
+as the source of the current passage. If source metadata is missing, omit the
+book title rather than infer it. Do not mention internal context or retrieval.
+"""
+TUTOR_CACHE_PROMPT = AKKA_TUTOR_SYSTEM_PROMPT + TAMIL_FINAL_CHECK + CBSE_EVIDENCE_CHECK + repr(sorted(GRADE_TEACHING_GUIDANCE.items()))
 
 
 def build_tutor_prompt(context: str, grade_level: int, subject: str, board: str = "tn") -> str:
@@ -135,7 +143,7 @@ def build_tutor_prompt(context: str, grade_level: int, subject: str, board: str 
     if board == 'cbse':
         prompt = prompt.replace('Tamil Nadu state board', 'CBSE / NCERT').replace('Samacheer Kalvi', 'NCERT')
         prompt = prompt.replace('Otherwise use a natural mix of English and Tamil.', 'Otherwise answer in English.')
-        prompt += '\nUse only the selected CBSE/NCERT textbook evidence. Never substitute State Board content.'
+        prompt += CBSE_EVIDENCE_CHECK
     if subject in ('Tamil', 'Advance Tamil', 'Advanced Tamil'):
         prompt += TAMIL_FINAL_CHECK
     return prompt
