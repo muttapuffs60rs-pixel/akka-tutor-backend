@@ -37,7 +37,7 @@ class TamilRetrievalTests(unittest.TestCase):
         ]
         result = tamil_keyword_passages(db, 'எழுவாய்த் தொடர்', 'Tamil', 10)
         self.assertEqual([r['content'] for r in result], [definition])
-        self.assertEqual(chain.eq.call_args_list, [call('grade_level', 10), call('subject', 'Tamil')])
+        self.assertEqual(chain.eq.call_args_list, [call('board', 'tn'), call('grade_level', 10), call('subject', 'Tamil')])
 
     def test_advanced_tamil_pagination_cache_and_grade_isolation(self):
         db = Mock()

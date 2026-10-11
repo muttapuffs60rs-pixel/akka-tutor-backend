@@ -179,7 +179,7 @@ def tamil_keyword_passages(database, question, subject, grade):
             for offset in range(0, 20000, 500):
                 batch = (database.table('documents')
                          .select('id, content, unit_name, section_name, sub_section_name')
-                         .eq('grade_level', grade).eq('subject', subject)
+                         .eq('board', 'tn').eq('grade_level', grade).eq('subject', subject)
                          .order('id').range(offset, offset + 499).execute().data)
                 rows.extend(batch)
                 if len(batch) < 500:

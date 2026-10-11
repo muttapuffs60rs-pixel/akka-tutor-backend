@@ -1,6 +1,6 @@
 # pyrefly: ignore [missing-import]
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string, time
-from typing import List, Optional
+from typing import List, Optional, Literal
 from uuid import UUID, uuid4
 import hashlib, json
 from datetime import datetime, timedelta, timezone
@@ -86,6 +86,7 @@ app.add_middleware(
 # ==========================================
 
 class ChatRequest(BaseModel):
+    board: Literal["tn", "cbse"] = "tn"
     session_id: UUID
     client_request_id: Optional[UUID] = None
     question: str = Field(min_length=1, max_length=2000)
@@ -158,11 +159,11 @@ TIER_PRICES = {
 
 @functools.lru_cache(maxsize=1000)
 def _get_context_cached(query: str, subject: str, grade: int,
-                        threshold, count, cache_epoch):
+                        threshold, count, cache_epoch, board="tn"):
     try:
         import re
         chunks = []
-        if subject in TAMIL_SUBJECTS:
+        if board == "tn" and subject in TAMIL_SUBJECTS:
             # Exact opening lines and rare title/author words precede vector matches.
             # Do not dilute a matched poem with unrelated semantic-search passages.
             rows = tamil_keyword_passages(supabase, query, subject, grade)
@@ -180,7 +181,7 @@ def _get_context_cached(query: str, subject: str, grade: int,
             sec_num = section_match.group(1)
             try:
                 exact_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
-                    .eq("grade_level", grade) \
+                    .eq("board", board).eq("grade_level", grade) \
                     .eq("subject", subject) \
                     .or_(f"section_name.ilike.%{sec_num}%,sub_section_name.ilike.%{sec_num}%,content.ilike.%{sec_num}%") \
                     .limit(3) \
@@ -199,13 +200,14 @@ def _get_context_cached(query: str, subject: str, grade: int,
         vector = embeddings.embed_query(query)
 
         # Cast grade safely to string to defend against internal RPC parsing failures
-        rpc = supabase.rpc("hybrid_match_documents", {
+        rpc = supabase.rpc("match_board_documents", {
             "query_embedding": vector,
             "query_text": query,
             "match_threshold": threshold,
             "match_count": count,
             "filter_grade": str(grade),
-            "filter_subject": str(subject)
+            "filter_subject": str(subject),
+            "filter_board": board
         }).execute()
 
         # The RPC only returns 'content' and 'similarity'. 
@@ -216,7 +218,7 @@ def _get_context_cached(query: str, subject: str, grade: int,
             meta_map = {}
             try:
                 meta_res = supabase.table("documents").select("content, unit_name, section_name, sub_section_name") \
-                    .eq("grade_level", grade).eq("subject", subject) \
+                    .eq("board", board).eq("grade_level", grade).eq("subject", subject) \
                     .in_("content", returned_contents).execute()
                 meta_map = {row["content"]: row for row in meta_res.data}
             except Exception:
@@ -243,10 +245,10 @@ def _get_context_cached(query: str, subject: str, grade: int,
         raise
 
 
-def get_context(query: str, subject: str, grade: int, threshold=0.1, count=5):
+def get_context(query: str, subject: str, grade: int, threshold=0.1, count=5, board="tn"):
     for attempt in range(2):
         try:
-            return _get_context_cached(query, subject, grade, threshold, count, int(time.time() // 300))
+            return _get_context_cached(query, subject, grade, threshold, count, int(time.time() // 300), board)
         except LookupError:
             break
         except Exception as error:
@@ -312,6 +314,16 @@ async def chat_handler(data: ChatRequest, request: Request, user_id: str = Depen
 
 
 async def perform_chat(data: ChatRequest, user_id: str):
+    # A resumed conversation keeps its original curriculum, even after profile changes.
+    sessions = await asyncio.to_thread(retry_database, lambda: supabase.table('chat_sessions')
+        .select('board,grade_level,subject').eq('id', str(data.session_id)).eq('user_id', user_id).execute().data)
+    if not sessions:
+        raise HTTPException(404, 'Conversation not found')
+    session = sessions[0]
+    if (session.get('board', 'tn') != data.board or
+        (session.get('grade_level') is not None and session['grade_level'] != data.grade_level) or
+        (session.get('subject') is not None and session['subject'] != data.subject)):
+        raise HTTPException(409, 'This conversation uses a different board, class or subject. Start a new chat.')
     client_request_id = str(data.client_request_id or uuid4())
     execution_id = str(uuid4())
     payload_hash = hashlib.sha256(json.dumps(data.model_dump(mode='json', exclude={'client_request_id'}),
@@ -438,7 +450,7 @@ async def perform_chat(data: ChatRequest, user_id: str):
                         {
                             "type": "text",
                             "text": (
-                                "You are an expert at reading Tamil Nadu State Board school textbook questions. "
+                                "You are an expert at reading school textbook questions. "
                                 "Describe the image in detail: include all text, labels, graph shapes, axes, and any visual elements. "
                                 "If there are multiple sub-graphs (i), (ii), (iii), etc., describe each one separately. "
                                 "Be precise and thorough so another AI can answer the student's question."
@@ -459,10 +471,10 @@ async def perform_chat(data: ChatRequest, user_id: str):
         if extracted_text is not None:
             extracted_text = clip_text(extracted_text, 6000)
         context = await asyncio.to_thread(
-            get_context, clip_text(search_query, 8000), data.subject, data.grade_level
+            get_context, clip_text(search_query, 8000), data.subject, data.grade_level, board=data.board
         )
         context = clip_text(context, 12000)
-        cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context) if cache_eligible else None
+        cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context, board=data.board) if cache_eligible else None
         cached = await asyncio.to_thread(answer_cache.lookup, cache_identity) if cache_identity else None
         if cached:
             if credit_admission.get('enabled') and credit_admission['remaining'] < 3000:
@@ -501,7 +513,7 @@ async def perform_chat(data: ChatRequest, user_id: str):
         if extracted_text is not None:
             system_prompt = f"""
 SYSTEM:
-{build_tutor_prompt(context, data.grade_level, data.subject)}
+{build_tutor_prompt(context, data.grade_level, data.subject, board=data.board)}
 
 INSTRUCTIONS:
 - Explain clearly in Tanglish
@@ -525,7 +537,7 @@ INSTRUCTIONS:
         # NORMAL TEXT FLOW
         # ==================================
         else:
-            system_prompt = build_tutor_prompt(context, data.grade_level, data.subject)
+            system_prompt = build_tutor_prompt(context, data.grade_level, data.subject, board=data.board)
             # Inject history into the prompt stream
             messages = [SystemMessage(content=system_prompt)] + formatted_history + [HumanMessage(content=clean_question)]
 

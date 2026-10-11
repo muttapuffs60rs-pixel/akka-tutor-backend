@@ -127,11 +127,15 @@ well as the ending: a later disclaimer does not fix an unsupported assertion.
 TUTOR_CACHE_PROMPT = AKKA_TUTOR_SYSTEM_PROMPT + TAMIL_FINAL_CHECK + repr(sorted(GRADE_TEACHING_GUIDANCE.items()))
 
 
-def build_tutor_prompt(context: str, grade_level: int, subject: str) -> str:
+def build_tutor_prompt(context: str, grade_level: int, subject: str, board: str = "tn") -> str:
     prompt = AKKA_TUTOR_SYSTEM_PROMPT.format(
         context=context, grade_level=grade_level, subject=subject,
         grade_guidance=GRADE_TEACHING_GUIDANCE[grade_level],
     )
+    if board == 'cbse':
+        prompt = prompt.replace('Tamil Nadu state board', 'CBSE / NCERT').replace('Samacheer Kalvi', 'NCERT')
+        prompt = prompt.replace('Otherwise use a natural mix of English and Tamil.', 'Otherwise answer in English.')
+        prompt += '\nUse only the selected CBSE/NCERT textbook evidence. Never substitute State Board content.'
     if subject in ('Tamil', 'Advance Tamil', 'Advanced Tamil'):
         prompt += TAMIL_FINAL_CHECK
     return prompt

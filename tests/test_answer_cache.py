@@ -11,6 +11,13 @@ import test_chat_cost_controls as chat_tests
 
 
 class CacheIdentityTests(unittest.TestCase):
+    def test_class_nine_boards_have_different_cache_keys(self):
+        cache = AnswerCache(Mock(), '2026-v1', 'prompt')
+        tn = cache.identity('What is an atom?', 'Science', 9, 'same context', board='tn')
+        cbse = cache.identity('What is an atom?', 'Science', 9, 'same context', board='cbse')
+        self.assertNotEqual(tn['cache_key'], cbse['cache_key'])
+        self.assertEqual(cbse['board'], 'CBSE')
+
     def test_same_atom_question_has_separate_answers_for_each_grade(self):
         from prompts import TUTOR_CACHE_PROMPT
         cache = AnswerCache(Mock(), '2026-v1', TUTOR_CACHE_PROMPT)

@@ -50,8 +50,16 @@ class RetrievalGradeScopeTests(unittest.TestCase):
         exec(compile(ast.Module(body=[function], type_ignores=[]), str(source), "exec"), namespace)
         result = namespace["_get_context_cached"]("Explain plants", "Science", 7, 0.1, 5, 0)
         self.assertIn("Class seven unit", result)
-        self.assertEqual(query.eq.call_args_list[0].args, ("grade_level", 7))
-        self.assertEqual(query.eq.call_args_list[1].args, ("subject", "Science"))
+        self.assertEqual(query.eq.call_args_list[0].args, ("board", "tn"))
+        self.assertEqual(query.eq.call_args_list[1].args, ("grade_level", 7))
+        self.assertEqual(query.eq.call_args_list[2].args, ("subject", "Science"))
+
+        query.eq.reset_mock()
+        namespace['_get_context_cached']('Explain plants', 'Science', 9, .1, 5, 0, 'cbse')
+        self.assertEqual(database.rpc.call_args.args[0], 'match_board_documents')
+        self.assertEqual(database.rpc.call_args.args[1]['filter_board'], 'cbse')
+        self.assertEqual(database.rpc.call_args.args[1]['filter_grade'], '9')
+        self.assertEqual(query.eq.call_args_list[0].args, ('board', 'cbse'))
 
         query.execute.side_effect = TimeoutError("metadata temporarily unavailable")
         result = namespace["_get_context_cached"]("Explain plants", "Science", 7, 0.1, 5, 0)

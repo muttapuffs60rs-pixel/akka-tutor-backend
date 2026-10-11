@@ -34,12 +34,12 @@ class AnswerCache:
         self.version = syllabus_version.strip()
         self.prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()
 
-    def identity(self, question, subject, grade, context):
+    def identity(self, question, subject, grade, context, board="tn"):
         if not self.version or not context or context == 'No specific textbook context found.':
             return None
         fields = {
             'question': normalize_question(question), 'subject': subject.strip(),
-            'grade_level': grade, 'board': 'Tamil Nadu State Board', 'language': 'Tanglish',
+            'grade_level': grade, 'board': 'CBSE' if board == 'cbse' else 'Tamil Nadu State Board', 'language': 'English' if board == 'cbse' else 'Tanglish',
             'syllabus_version': self.version, 'prompt_hash': self.prompt_hash,
             'context_hash': hashlib.sha256(context.encode()).hexdigest(),
         }

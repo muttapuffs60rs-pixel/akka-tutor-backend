@@ -3,7 +3,7 @@ import asyncio
 import os
 from pathlib import Path
 from types import SimpleNamespace
-from typing import List, Optional
+from typing import List, Optional, Literal
 from uuid import UUID, uuid4
 import hashlib, json
 from datetime import datetime, timedelta, timezone
@@ -44,6 +44,7 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.env = load_chat()
         self.db = Mock()
+        self.db.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = [{'board': 'tn', 'grade_level': None, 'subject': None}]
         self.db.rpc.return_value.execute.return_value.data = {'request_id': 'request', 'turns_used': 1}
         claim = Mock()
         claim.execute.return_value.data = {'claimed': True}
@@ -58,6 +59,14 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
             session_id='00000000-0000-0000-0000-000000000001', question='Explain gravity',
             subject='Science', grade_level=10,
             history=[{'role': 'user', 'content': 'old question' * 1000}] * 20)
+
+    async def test_board_mismatch_is_rejected_before_usage_or_retrieval(self):
+        self.request.board = 'cbse'
+        with self.assertRaises(HTTPException) as error:
+            await self.env['chat_handler'](self.request, 'student')
+        self.assertEqual(error.exception.status_code, 409)
+        self.db.rpc.assert_not_called()
+        self.env['get_context'].assert_not_called()
 
     async def test_rejected_requests_never_reach_context_or_provider(self):
         for reason, status in [('conversation_limit', 409), ('daily_limit', 403), ('session', 404)]:

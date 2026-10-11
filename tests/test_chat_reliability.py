@@ -88,7 +88,7 @@ class ChatIdempotencyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([part async for part in response.body_iterator], ['Saved reply'])
         self.assertEqual(response.headers['x-request-replayed'], 'true')
         self.env['get_context'].assert_not_called()
-        self.db.table.assert_not_called()
+        self.db.table.assert_called_once_with('chat_sessions')
 
     async def test_pending_duplicate_never_starts_second_generation(self):
         self.db.rpc.return_value.execute.return_value.data = {
