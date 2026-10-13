@@ -1,0 +1,285 @@
+ARIVORA — EDUCATIONAL ACCURACY REVIEW
+12 October 2026 — updated after continuation
+
+Readiness: READY FOR CONTROLLED LOCAL TESTING; REQUIRES FURTHER FIXES AND
+VERIFIED EDUCATIONAL DATA BEFORE PRODUCTION RELEASE.
+
+The new code is local. No deployment, Git push, production database migration,
+paid infrastructure purchase, or production textbook verification was performed.
+Unrelated frontend, legal, support and iOS changes have been preserved.
+
+A. CURRENT ARCHITECTURE
+
+The chat handler retains authentication, session ownership, board/class/subject
+checks, request admission, replay handling and credit settlement. It then resolves
+the student's reference before retrieving an exact answer:
+
+  Question + student history -> reference type/scope -> curriculum-constrained
+  source lookup -> reviewed source/meaning rendering OR honest fallback.
+
+Canonical numbers, textbook selection ordinals, chapter, lesson, exercise,
+question and page numbers have distinct identities. Exercise/question compound
+references retain their parent qualifier. Ambiguous numbers prompt clarification.
+Explicit canonical intent is required before using a numbered canonical Kural.
+
+Textbook records must match board, class, subject, reference and supplied scope,
+have verified status, source title/URL, edition, content version and content.
+Multiple matching editions/items fail closed. A user hint may narrow existing
+reviewed metadata; it cannot mark a record verified. No missing textbook item
+is replaced by a canonical item with the same number.
+
+Source passages, source meanings, reviewed simplifications and teaching examples
+are separately labelled. Missing reviewed explanations/examples are disclosed.
+Canonical Kural replies use historical commentary only when safely paired with
+the exact verse. Otherwise the verified verse is shown with an explicit notice
+that its explanation has not been verified. No nearby-number meaning is borrowed.
+
+Other conceptual questions continue through board/class/subject-filtered RAG and
+the existing model. Generated answers are buffered before display. Conservative
+guards reject unsupported quoted strings, generated citations/page claims and
+some explicit numeric/scientific contradictions. This is not comprehensive
+semantic verification of every generated explanation. Cached answers pass the
+same guard. Retrieval failures do not establish textbook coverage or absence.
+
+B. FILES AND DATABASE CHANGES
+
+Backend modified: main.py, prompts.py, .gitignore, tests/test_app_hardening.py.
+Backend added/continued from interrupted work:
+  reference_resolution.py — reference identity and follow-up scope.
+  curriculum_evidence.py — exact reviewed curriculum lookup.
+  source_answers.py — controlled reviewed teaching and narrow fact checks.
+  learning_context.py — service-only reference memory; ownership/scope/expiry checks.
+  reviewed_sources.py — separate TN/CBSE official 2024 source excerpts.
+  verify_reviewed_sources.py — read-only publisher PDF fingerprint check.
+  curriculum/reviewed/class6-tamil-p49.json — two visually checked source records.
+  tests/test_accuracy_completion.py — source/state/HTTP and default-edition regressions.
+  educational_accuracy.py — canonical routing, integrity, quote guard, arithmetic.
+  import_canonical.py — reproducible canonical source import.
+  audit_corpus.py — discrepancy classification and edition cross-check.
+  audit_disputed.py — continued published-edition audit of all 296 blocked records.
+  tests/test_disputed_audit.py — parser, competing-reading and corpus-integrity regressions.
+  curriculum/canonical/ — preserved sources, corpus and audit findings.
+  tests/test_educational_accuracy.py — 18 accuracy tests.
+  tests/test_accuracy_pipeline.py — 7 handler integration tests with adapters.
+  supabase_educational_evidence.sql — OPTIONAL, UNAPPLIED migration.
+
+The migration adds edition/academic-year/term/medium, source/review metadata, distinct reference
+fields, source meaning, reviewed simplification/example and a lookup index to the
+existing documents table. Existing rows remain unreviewed. Client roles cannot
+write verification metadata. A separate chat_learning_context table has RLS enabled
+and no client access; only service_role may read/write it. Verified reference
+identities are saved before releasing the request lock and revalidated against
+sources on each answer. Failed/missing-source turns cannot retain the previous
+item as a new verified answer. Migration remains unapplied and requires review.
+
+Frontend accuracy-related pending change: lib/screens/chat_screen.dart sends up
+to 20 recent messages instead of six. Reference resolution uses that history
+before the smaller model prompt budget is applied. Existing loading, Tamil text,
+image/voice controls and text/plain response contract are retained. Other pending
+frontend changes predated this review and were not discarded.
+
+C. DATASET QUALITY
+
+Total canonical records: 1,330.
+Verified edition transcriptions: 1,286.
+Unresolved and blocked: 44.
+Original discrepancy set: 313; corrected with provenance: 269 (17 + 252).
+Latest continuation: all 296 outstanding records checked; 252 adopted, 44 blocked.
+
+Classification of the original 313:
+  36 missing/added text requiring review.
+  265 spelling/word differences requiring review.
+  9 encoding/transcription corruption cases.
+  1 missing authoritative identifier.
+  2 duplicate authoritative identifiers.
+
+The original 1,017 matching records were retained. Seventeen further readings
+were adopted only when the preserved commentary edition and plain PM edition
+agreed on the text and chapter. Previous secondary readings remain recorded.
+The continuation compared the 296 outstanding records with the separately
+numbered PM Tamil/English edition and two TVA editions (auth_pub_id 31 and 35).
+Only exact Tamil-letter agreement in two published editions is accepted.
+Whitespace/punctuation may vary; letters and diacritics are never stripped or
+fuzzily repaired. If two different readings each have two supporting editions,
+the record stays blocked. New evidence can withdraw an earlier adoption.
+No LLM corrected verses. Modern TVA explanations and English translations are
+not imported. Of the 252 newly adopted verses, 246 have no safely paired
+historical explanation and disclose that limitation. Three commentary records
+have displaced printed numbers; their unique exact verse match is recorded.
+
+Source HTML bytes and checksums are retained. A malformed heading is repaired
+only in the parser's view, not in the preserved original. Validation checks
+1–1330 identity coverage, 133 chapters, chapter allocation, two-line structure,
+verified Tamil script and source checksums. The second edition still has duplicate
+IDs 71/752 and missing IDs 72/753/781/1293 in the parsed representation; independent
+chapter boundary exceptions are 71/781. They are reported, not silently guessed.
+
+Machine agreement confirms published readings, not a critical edition or human
+review of every meaning. “Verified” here does not mean verified against a
+2026–27 school textbook. The remaining 44 records need editorial/source review.
+Publisher exception pages, repeated numbers and mismatched chapter/ordinal/global
+numbers are rejected. Raw TVA research pages remain in ignored tmp folders;
+their URLs, byte hashes and parsed readings are recorded in dispute-review.json.
+Reapplying the audit requires unchanged preserved inputs and all earlier evidence
+receipts. Older import/audit scripts refuse to overwrite this newer corpus.
+
+Sources:
+https://www.projectmadurai.org/pm_etexts/utf8/pmuni0001.html
+https://www.projectmadurai.org/pm_etexts/utf8/pmuni0450_01.html
+(and preserved commentary parts 02–04).
+https://www.projectmadurai.org/pm_etexts/utf8/pmuni0017.html
+https://www.tamilvu.org/slet/l2100/l2100pd1.jsp?auth_pub_id=31&bookid=31&pno=5
+https://www.tamilvu.org/slet/l2100/l2100pd1.jsp?auth_pub_id=35&bookid=31&pno=32
+The source headers remain intact. PM's full-file distribution permission should
+not be treated as an unrestricted licence for every derived commercial dataset;
+distribution rights need review before release. The secondary CC0 source is not
+used to import uncertain contemporary translations.
+
+Detailed findings: curriculum/canonical/validation-report.json and dispute-review.json.
+The unchanged pre-continuation baseline is validation-report-v2.json.
+
+D. EXPLANATION VALIDATION
+
+The exact textbook path does not ask the model to improvise an interpretation.
+It displays only reviewed meanings/simplifications. The meaning-preservation
+check accepts normalized approved text, not keyword overlap or model agreement.
+The regression fixture rejects the supplied wrong interpretation about wealth
+and accepts the reviewed selfishness/selflessness explanation.
+
+This is a deliberately conservative baseline: it can reject valid new
+paraphrases and cannot independently prove that an editor's approved meaning is
+correct. Production review is essential. Generic generated lessons, image
+interpretations, grammar, units, scientific processes and historical reasoning
+do not yet have comprehensive subject-level semantic validators.
+
+The common reviewed-source path works for Tamil, Mathematics, Science, English
+and Social Science in fixture tests. Deterministic arithmetic uses bounded AST
+evaluation and exact rational numbers. Additional checks cover plain numeric
+equalities and a narrow water-formula assertion. The small curated fact collection
+is not complete syllabus coverage. Algebra, dimensional analysis and arbitrary
+science/history/grammar correctness remain outside this validation baseline.
+
+E. CONTEXTUAL REFERENCE RESOLUTION
+
+1. Textbook scope + reviewed test selection 7 -> thirukkural:72.
+2. Explicit original/canonical Kural 7 -> canonical verse 7.
+3. Bare 7 or unqualified Kural 7 without scope -> one clarification.
+4. Missing/unreviewed/ambiguous textbook mapping -> honest unavailable answer.
+5. Meaning, simpler explanation, example, why and next-item follow-ups retain
+   reference intent. “No” acknowledges the student instead of repeating a verse.
+6. Subject/grade/board lookup filters prevent fixture cross-curriculum retrieval;
+   existing session mismatch checks are retained.
+
+The user requested academic year 2026–27. The current official SCERT catalogue
+links to a State Board Class 6 Tamil Term I PDF whose edition page says 2024
+reprint. Visual review establishes selection 7 on printed page 49 (PDF page 57),
+with the supplied verse and meaning; canonical 72 agrees with the preserved
+canonical corpus. The separately catalogued CBSE Tamil reader has the same item
+on printed page 49 (PDF page 59), also in a 2024 reprint. Board identities are not
+merged. This establishes the mapping in those editions, NOT 2026–27 applicability.
+
+Only exact source text and source meaning were added. No generated simplification
+or example was marked reviewed. Following the user's approval, 2024 is the default
+for reviewed Class 6 Tamil textbook Kural selections in TN and CBSE, with separate
+board identities. A request for 2026–27, another edition or another term cannot
+fall back to them. Other grades/subjects receive no inferred edition. Whole-page requests
+cannot return the one selected excerpt as if it represented the full page.
+
+Server-only memory now retains the resolved reference plus actual source
+edition/year/term for 30 days. It is constrained to the same user, session, board,
+class and subject. New topics clear item identity; parent-reference changes clear
+stale exercise/page qualifiers. The server rechecks the source before responding.
+When the migration is absent, normal history-based resolution remains available;
+no persistence claim is made for the unchanged production database.
+
+F. TEST RESULTS — ACTUALLY EXECUTED
+
+Original backend baseline: 66 passed.
+Final backend suite: 112 passed (including the continued audit, approved default
+edition, and actual-handler missing-explanation / blocked-record regressions).
+Command: python -m unittest discover -s tests
+Log: accuracy-regression.log.
+
+Flutter suite: 39 passed in the earlier run; frontend was not changed in this continuation.
+Command: flutter test
+Log: ../akka_tutor/accuracy-flutter-tests.log.
+
+Mandatory scenarios covered by automated checks:
+  Textbook 7 vs canonical 7, bare-number ambiguity, incorrect quote, correct verse
+  with wrong meaning, approved simplification, follow-up continuity, missing source,
+  corpus IDs/chapters/quarantine, rational arithmetic, narrow science fact checks,
+  Tamil script/no repeated greeting, curriculum isolation, fake citations,
+  retrieval/provider failure, and existing Flutter regressions.
+
+Additional regressions cover unnamed textbook requests, source-less image
+reference handling, edition conflicts and common reviewed sources across subjects.
+The handler tests invoke actual perform_chat code extracted without heavy
+model startup; authentication/billing/database/provider dependencies are mocked.
+An additional in-process ASGI HTTP test invokes the actual /ask route, queue,
+request validation and response stream. Authentication and service adapters are
+mocked; this is not a deployed server or live paid-model acceptance test. Adversarial provider streams cannot leak partial quotes.
+
+Flutter tests include board/class controls, chat transport, Tamil keyboard and
+voice-related control behavior. Physical microphone permissions, camera uploads,
+real speech recognition, Safari/device typography and live response interaction
+were NOT end-to-end device-tested in this review. Human Class 6 Tamil readability
+review also remains outstanding.
+
+Python compilation and backend whitespace checks passed after the continuation.
+The earlier Git whitespace checks passed for both repositories (frontend emitted an existing
+line-ending warning). No new Android/iOS build was created for this accuracy work.
+
+G. CONVERSATION AND LIVE DATA VERIFICATION
+
+accuracy-conversation-transcript.json contains a nine-turn conversation through
+the actual local handler: introduction, yes, poetry section, repeated topic,
+selection 7, meaning, simpler explanation, example and explicit canonical 7.
+That earlier fixture transcript remains for comparison. Textbook answers stay on
+72; the explicit canonical request returns 7. Missing
+reviewed examples are disclosed. This uses a labelled user-supplied test fixture,
+not an authenticated deployed conversation or a verified 2026–27 textbook.
+
+The new accuracy-official-source-conversation.json uses the actual handler with
+real, visually checked official 2024 source excerpts. Six turns show default
+selection 7, meaning continuity, refusal to substitute 2024 for requested 2026–27,
+explicit canonical 7, a newly adopted verse without an explanation, and a blocked
+record. Only service/auth/billing adapters are mocked. No LLM calls occurred.
+verify_reviewed_sources.py re-downloaded both official PDFs and passed their
+SHA-256 checks. This detects future publisher replacements; a changed file needs
+fresh visual review. Details: textbook-verification-2026-27.json.
+
+A separate read-only live Supabase check on 12 October 2026 confirmed:
+  State Board: 132,641 document chunks; sampled record contains 412 characters.
+  CBSE: 95,670 document chunks; sampled record contains 779 characters.
+These are actual content passages, not just curriculum titles. Counts and sample
+presence do not establish completeness, perfect extraction or reviewed accuracy.
+The new review-metadata query returned HTTP 400 / PostgreSQL 42703 (missing
+column); the new migration has not been applied.
+Evidence: accuracy-live-data-check.json. No credentials or student data saved.
+
+H. KNOWN LIMITATIONS / RELEASE BLOCKERS
+
+- The verified 2024 source is now approved as the default. Any later claim of
+  2026–27 applicability still needs separate official evidence. Current verified
+  local textbook coverage is limited to two exact excerpts, not whole books.
+- Review/apply the migration only after approval; import reviewed source identities
+  and meanings. Current production chunks lack the required new review metadata.
+- Editorially resolve the 44 canonical conflicts and review missing explanations/rights.
+- Expand subject-specific validators and reviewed teaching content. Broad model
+  fluency still does not prove educational accuracy.
+- The new durable state migration has not been applied or exercised in a staging
+  Supabase database. Unit/handler memory tests do not verify production RLS setup.
+- Run staging HTTP/provider and mobile/Safari acceptance tests, including actual
+  voice/image flows; review age-appropriate Tamil with an educator.
+- The legacy quiz route now filters by requested board, rejects missing context,
+  checks asserted explanations/answers with the shared guard, and explicitly
+  returns generated_unreviewed status. It still requires editorial review for
+  conceptual correctness; false distractor options are intentionally not fact-checked.
+
+I. READINESS DECISION
+
+The original numbered-Kural ambiguity is addressed by source-first routing and
+tested fail-safe behavior. The entire educational accuracy problem is NOT fixed.
+This implementation is suitable for controlled local testing and review. Release
+remains blocked by missing verified textbook data and broader semantic/acceptance
+validation. Production remains unchanged as requested.

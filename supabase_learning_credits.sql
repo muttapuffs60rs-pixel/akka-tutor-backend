@@ -8,11 +8,12 @@ INSERT INTO public.learning_credit_policy(singleton) VALUES(true) ON CONFLICT DO
 CREATE TABLE IF NOT EXISTS public.learning_credit_wallets (
     user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     credit_date date NOT NULL,
-    daily_remaining bigint NOT NULL DEFAULT 15000,
+    daily_remaining bigint NOT NULL DEFAULT 0,
     welcome_remaining bigint NOT NULL DEFAULT 0 CHECK(welcome_remaining BETWEEN 0 AND 50000),
     active_request uuid,
     active_since timestamptz
 );
+ALTER TABLE public.learning_credit_wallets ALTER COLUMN daily_remaining SET DEFAULT 0;
 ALTER TABLE public.ai_chat_requests ADD COLUMN IF NOT EXISTS learning_credits_charged bigint;
 ALTER TABLE public.ai_chat_requests ADD COLUMN IF NOT EXISTS topup_credits_charged bigint DEFAULT 0;
 ALTER TABLE public.learning_credit_wallets ADD COLUMN IF NOT EXISTS active_paid boolean DEFAULT false;
@@ -24,24 +25,36 @@ CREATE TABLE IF NOT EXISTS public.learning_credit_topups (
     granted_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL DEFAULT (now()+interval '30 days')
 );
+-- Preserve existing grants and their expiry; apply new terms only to new purchases.
+ALTER TABLE public.learning_credit_topups ADD COLUMN IF NOT EXISTS granted_credits bigint NOT NULL DEFAULT 200000;
+ALTER TABLE public.learning_credit_topups ALTER COLUMN granted_credits SET DEFAULT 300000;
+ALTER TABLE public.learning_credit_topups ALTER COLUMN remaining SET DEFAULT 300000;
+ALTER TABLE public.learning_credit_topups ALTER COLUMN expires_at SET DEFAULT (now()+interval '10 days');
+ALTER TABLE public.learning_credit_topups DROP CONSTRAINT IF EXISTS learning_credit_topups_remaining_check;
+ALTER TABLE public.learning_credit_topups ADD CONSTRAINT learning_credit_topups_remaining_check CHECK(remaining BETWEEN 0 AND 300000);
 ALTER TABLE public.learning_credit_topups ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.learning_credit_topups FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.learning_credit_topups TO service_role;
 CREATE INDEX IF NOT EXISTS learning_credit_topups_user_expiry ON public.learning_credit_topups(user_id,expires_at);
 CREATE OR REPLACE FUNCTION public.grant_learning_credit_topup(target_user_id uuid,payment_id_value text,order_id_value text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE pack public.learning_credit_topups%ROWTYPE;
+DECLARE pack public.learning_credit_topups%ROWTYPE; valid_until timestamptz;
 BEGIN
     IF length(coalesce(payment_id_value,'')) < 3 OR length(coalesce(order_id_value,'')) < 3 THEN
         RAISE EXCEPTION 'Invalid verified payment identity';
     END IF;
-    INSERT INTO public.learning_credit_topups(payment_id,order_id,user_id)
-        VALUES(payment_id_value,order_id_value,target_user_id) ON CONFLICT DO NOTHING;
+    SELECT subscription_expires_at INTO valid_until FROM public.profiles
+        WHERE id=target_user_id AND subscription_tier IN ('tier_199','tier_499','tier_999')
+        AND subscription_expires_at>now()
+        AND (subscription_start_date IS NULL OR subscription_start_date<=now()) FOR UPDATE;
+    valid_until := coalesce(valid_until,now()+interval '10 days');
+    INSERT INTO public.learning_credit_topups(payment_id,order_id,user_id,remaining,granted_credits,expires_at)
+        VALUES(payment_id_value,order_id_value,target_user_id,300000,300000,valid_until) ON CONFLICT DO NOTHING;
     SELECT * INTO pack FROM public.learning_credit_topups WHERE payment_id=payment_id_value;
     IF NOT FOUND OR pack.user_id<>target_user_id OR pack.order_id<>order_id_value THEN
         RAISE EXCEPTION 'Payment grant conflict';
     END IF;
-    RETURN jsonb_build_object('credits',200000,'remaining',pack.remaining,'expires_at',pack.expires_at);
+    RETURN jsonb_build_object('credits',pack.granted_credits,'remaining',pack.remaining,'expires_at',pack.expires_at);
 END $$;
 REVOKE ALL ON FUNCTION public.grant_learning_credit_topup(uuid,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.grant_learning_credit_topup(uuid,text,text) TO service_role;
@@ -62,18 +75,19 @@ BEGIN
     ON CONFLICT DO NOTHING;
     SELECT * INTO w FROM public.learning_credit_wallets WHERE user_id=target_user_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'User not found'; END IF;
-    IF w.credit_date < today AND NOT (w.active_request IS NOT NULL AND w.active_since > now()-interval '10 minutes') THEN
-        -- Daily credits never accumulate. Carry an in-progress answer's overrun.
+    IF NOT (w.active_request IS NOT NULL AND coalesce(w.active_since > now()-interval '10 minutes',false)) THEN
+        -- Daily grants are retired. Preserve negative completion debt and any
+        -- already admitted answer; never refill or regrant the welcome wallet.
         UPDATE public.learning_credit_wallets SET credit_date=today,
-            daily_remaining=15000 + least(daily_remaining,0) WHERE user_id=target_user_id;
+            daily_remaining=least(daily_remaining,0) WHERE user_id=target_user_id;
     END IF;
     SELECT * INTO w FROM public.learning_credit_wallets WHERE user_id=target_user_id;
     RETURN jsonb_build_object('daily_remaining',greatest(w.daily_remaining,0),
-        'welcome_remaining',w.welcome_remaining,'daily_allowance',15000,
+        'welcome_remaining',w.welcome_remaining,'welcome_allowance',50000,'daily_allowance',0,
         'remaining',greatest(w.daily_remaining+w.welcome_remaining,0)+coalesce((SELECT sum(remaining) FROM public.learning_credit_topups WHERE user_id=target_user_id AND expires_at>now()),0),
         'topup_remaining',coalesce((SELECT sum(remaining) FROM public.learning_credit_topups WHERE user_id=target_user_id AND expires_at>now()),0),
         'completion_overrun',greatest(-w.daily_remaining,0),
-        'resets_at',((today+1)::timestamp AT TIME ZONE 'Asia/Kolkata'),
+        'resets_at',NULL,
         'active',w.active_request IS NOT NULL AND w.active_since > now()-interval '10 minutes');
 END $$;
 
@@ -94,13 +108,14 @@ BEGIN
         RETURN jsonb_build_object('error','credit_busy');
     END IF;
     IF coalesce(tier,'free')='free' AND (balance->>'remaining')::bigint <= 0 THEN RETURN jsonb_build_object('error','credit_limit'); END IF;
-    plan_limit := CASE tier WHEN 'tier_199' THEN 1250000 WHEN 'tier_499' THEN 3000000
+    plan_limit := CASE tier WHEN 'tier_199' THEN 3000000 WHEN 'tier_499' THEN 5000000
         WHEN 'tier_999' THEN 8000000 ELSE 9223372036854775807 END;
     SELECT greatest(0,plan_limit-coalesce(sum(coalesce(learning_credits_charged,
         coalesce(input_tokens,0)+coalesce(output_tokens,0)+coalesce(vision_input_tokens,0)+coalesce(vision_output_tokens,0))
         -coalesce(topup_credits_charged,0)),0)) INTO base_remaining
         FROM public.ai_chat_requests WHERE user_id=target_user_id
-        AND created_at >= (date_trunc('month',now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata');
+        AND created_at >= coalesce((SELECT subscription_start_date FROM public.profiles WHERE id=target_user_id),
+            (date_trunc('month',now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata'));
     UPDATE public.learning_credit_wallets SET active_request=target_request_id,active_since=now(),
         active_paid=coalesce(tier,'free')<>'free',active_base_remaining=base_remaining
         WHERE user_id=target_user_id;

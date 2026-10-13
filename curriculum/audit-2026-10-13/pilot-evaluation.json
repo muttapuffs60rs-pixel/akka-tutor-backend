@@ -1,0 +1,946 @@
+{
+  "summary": {
+    "rubric": "Assistant source-based review of one run; not independent teacher grading or statistically representative student outcomes.",
+    "total_cases": 20,
+    "real_provider_calls": 12,
+    "deterministic_cases": 8,
+    "science_answerable_cases": 8,
+    "science_retrieval_invoked_cases": 7,
+    "science_expected_chapter_hits": 7,
+    "science_expected_anchor_page_hits": 6,
+    "tamil_positive_retrieval_cases": 4,
+    "tamil_relevant_topic_hits": 2,
+    "tamil_database_edition_verified_hits": 0,
+    "input_tokens": 33749,
+    "output_tokens": 4008,
+    "cache_read_tokens": 16896,
+    "estimated_peak_cost_usd": 0.009966876,
+    "estimated_offpeak_cost_usd": 0.004983438,
+    "reserved_upper_bound_usd": 0.07534859999999999,
+    "provider_case_median_seconds": 2.6929380999936257,
+    "provider_case_max_seconds": 10.056094800005667
+  },
+  "cases": [
+    {
+      "id": "ta01",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "textbook kural 7",
+      "expected_source": "official 2024 Term I printed p49 / PDF p57, canonical 72",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "local_reviewed_source",
+      "explanation_accuracy": "supported",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none observed",
+      "review_note": "Correct source selection and canonical identity; local reviewed fallback after missing production review column.",
+      "response_seconds": 1.513957399991341
+    },
+    {
+      "id": "ta02",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "பொருள்",
+      "expected_source": "same verified selection 7 meaning",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "local_reviewed_source",
+      "explanation_accuracy": "supported",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none observed",
+      "review_note": "Exact source meaning and same selection preserved.",
+      "response_seconds": 0.7639041000220459
+    },
+    {
+      "id": "ta03",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "7",
+      "expected_source": "clarify reference; no invented passage",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "appropriate_clarification",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none observed",
+      "review_note": "Asks what bare number means.",
+      "response_seconds": 0.0049962000048253685
+    },
+    {
+      "id": "ta04",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "இன்பத்தமிழ் பாடலை எழுதியவர் யார்?",
+      "expected_source": "Bharathidasan; Term I printed p2 / PDF p10",
+      "retrieved_sources": [
+        {
+          "id": "0faa36c7-c9fd-5d64-bfdd-9514cb6ddee1",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு, கற்கண்டு, இன எழுத்துகள்",
+          "section_name": "மொழியை ஆள்வோம்",
+          "sub_section_name": "குறுக்கெழுத்துப் புதிர்",
+          "source_url": null
+        },
+        {
+          "id": "7b4018f1-5acd-52ca-a562-e602773ba01e",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு, கற்கண்டு, இன எழுத்துகள்",
+          "section_name": "மொழியை ஆள்வோம்",
+          "sub_section_name": "அடைப்புக்குள் கொடுக்கப்பட்டுள்ள சொற்களை பயன்படுத்தி பின்வரும் விடுகதைக்கு விடை காணுங்கள்.",
+          "source_url": null
+        }
+      ],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "untraceable_edition",
+      "explanation_accuracy": "no_answer",
+      "contextual_accuracy": "retrieval_miss",
+      "unsupported_claims": "none displayed",
+      "review_note": "Author exists on official page; unrelated crossword retrieval. Generated abstention was then withheld.",
+      "response_seconds": 10.056094800005667
+    },
+    {
+      "id": "ta05",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "இன்பத்தமிழ் பாடலில் தமிழ் உயிருக்கு இணையாகக் கூறப்படுவது ஏன்?",
+      "expected_source": "Term I poem and source explanation; avoid invented interpretation",
+      "retrieved_sources": [
+        {
+          "id": "77f0535a-7964-539c-8b0a-0fc4e90c7cc5",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று தமிழ்த்தேன்",
+          "section_name": "இயல்  ஒன்று இன்பத்தமிழ்",
+          "sub_section_name": "பாடலின் பொருள்",
+          "source_url": null
+        },
+        {
+          "id": "f3990c10-0a51-5f00-b2f9-df8d3fd6f0bc",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று தமிழ்த்தேன்",
+          "section_name": "இயல்  ஒன்று இன்பத்தமிழ்",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "2be7d3c9-aa9e-5a73-8223-a77144fb217b",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று தமிழ்த்தேன்",
+          "section_name": "இயல்  ஒன்று இன்பத்தமிழ்",
+          "sub_section_name": "பெட்டிச் செய்தி ஆரம்பம்",
+          "source_url": null
+        },
+        {
+          "id": "7bca18c8-5278-549d-ba78-6adebdee213e",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று தமிழ்த்தேன்",
+          "section_name": "இயல்  ஒன்று இன்பத்தமிழ்",
+          "sub_section_name": "சிந்தனை வினா",
+          "source_url": null
+        }
+      ],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "untraceable_edition",
+      "explanation_accuracy": "supported_core",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "interpretation extends source meaning",
+      "review_note": "Relevant poem/explanation; core comparison with life is supported. Modern paraphrase not teacher-reviewed.",
+      "response_seconds": 6.584603600000264
+    },
+    {
+      "id": "ta06",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "வளர்தமிழ் பாடத்தில் தமிழ் காலத்திற்கு ஏற்ப எவ்வாறு வளர்கிறது?",
+      "expected_source": "Term I Valartamil prose",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "unnecessary_abstention",
+      "contextual_accuracy": "overblocking",
+      "unsupported_claims": "none observed",
+      "review_note": "Prose question stopped before retrieval because textbook-scope detection is too broad.",
+      "response_seconds": 0.006525200005853549
+    },
+    {
+      "id": "ta07",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "உயிர் எழுத்துகள் எத்தனை?",
+      "expected_source": "12; official grammar section must be visually checked",
+      "retrieved_sources": [
+        {
+          "id": "e5bf9bcf-16d9-58f6-8d42-aa028a3033f2",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு, கற்கண்டு, இன எழுத்துகள்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "5aee05d4-8d42-5f2d-ad8e-855566c7a573",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு – உரைநடை உலகம் – பசிப்பிணி போக்கிய பாவை – நாடகம்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "70fd8594-5c59-5f14-bd9e-81944e7b7d80",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று வளர்தமிழ்",
+          "section_name": "இயல் ஒன்று தமிழ் எழுத்துகளின் வகையும் தொகையும்",
+          "sub_section_name": "உயிர் மெய்",
+          "source_url": null
+        },
+        {
+          "id": "7d8ef5ee-02ee-5c56-a18d-435b4864af66",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் மூன்று – கவிதைப்பேழை – ஆசியஜோதி",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "d9750e6e-2272-50d6-987b-7a100b51e4c5",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று  மொழி இறுதி எழுத்துகள்",
+          "section_name": "மொழி இறுதி ஆகா எழுத்துக்கள்",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "875168c1-2a1d-528e-b7c7-70f61f36e36f",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "General Unit",
+          "section_name": "இயல் இரண்டு முதலெழுத்தும் சார்பெழுத்தும்",
+          "sub_section_name": "முதல் எழுத்துகள்",
+          "source_url": null
+        }
+      ],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "untraceable_edition",
+      "explanation_accuracy": "incorrect_generation_withheld",
+      "contextual_accuracy": "mixed_retrieval",
+      "unsupported_claims": "wrong classification withheld",
+      "review_note": "Generated 7 short/5 long vowels; official page has 5 short/7 long. Removing quoted example makes wrong classification pass guard.",
+      "response_seconds": 1.832393700024113
+    },
+    {
+      "id": "ta08",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "அவற்றுக்கு எடுத்துக்காட்டு கொடு",
+      "expected_source": "retain vowel topic; do not switch to unrelated grammar",
+      "retrieved_sources": [
+        {
+          "id": "ec1ab065-b457-56c1-a354-15194c523720",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு – கற்கண்டு – பெயர்ச்சொல்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "e7b29890-391f-570e-97e0-2f92b9d67be9",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று – கற்கண்டு – நால்வகைச் சொற்கள்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "35646e97-c70b-54e7-b0af-faab2764e030",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் ஒன்று வளர்தமிழ்",
+          "section_name": "General Section",
+          "sub_section_name": "செயல்பாடு ஆரம்பம்",
+          "source_url": null
+        },
+        {
+          "id": "c2f085e3-c48e-5027-a8f0-44884f31ef7c",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு – கற்கண்டு – பெயர்ச்சொல்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "f917ece1-232f-5d7a-94e0-b564166f7358",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "இயல் இரண்டு – கற்கண்டு – பெயர்ச்சொல்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        },
+        {
+          "id": "f4d22b14-549d-51c0-ad39-66c5abd5a923",
+          "board": "tn",
+          "grade_level": 6,
+          "subject": "Tamil",
+          "unit_name": "கற்கண்டு இயல் மூன்று அணி இலக்கணம்",
+          "section_name": "General Section",
+          "sub_section_name": "General Sub-Section",
+          "source_url": null
+        }
+      ],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "untraceable_edition",
+      "explanation_accuracy": "partially_unverifiable",
+      "contextual_accuracy": "retrieval_context_lost",
+      "unsupported_claims": "unreviewed example",
+      "review_note": "Response remembers vowels from history, but retrieval drops the previous topic; example ஔவியம் not validated by reviewed source.",
+      "response_seconds": 2.1752555999846663
+    },
+    {
+      "id": "ta09",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "“விண்வெளி மிட்டாய் மழை” என்ற பாடலை விளக்குக",
+      "expected_source": "do not invent or falsely source nonexistent named work",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "appropriate_abstention",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none observed",
+      "review_note": "Missing named poem is not invented; asks for source.",
+      "response_seconds": 3.462434899993241
+    },
+    {
+      "id": "ta10",
+      "selected_curriculum": {
+        "board": "tn",
+        "grade": 6,
+        "subject": "Tamil"
+      },
+      "question": "2026-27 textbook kural 7",
+      "expected_source": "no substitution of verified 2024 edition",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "appropriate_abstention",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none observed",
+      "review_note": "Explicit 2026-27 is not silently replaced with 2024.",
+      "response_seconds": 0.3643945999792777
+    },
+    {
+      "id": "sc01",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "What is displacement and how is it different from distance?",
+      "expected_source": "Exploration chapter 4 PDF p3-4",
+      "retrieved_sources": [
+        {
+          "id": "cf027a9c-5f42-5036-a6d7-e2c5f8bc410f",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 3",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "3b6b51d9-3dd3-5ad7-8970-67739d282ad1",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 7",
+          "sub_section_name": "PDF page 2",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"
+        },
+        {
+          "id": "5f585767-b9cd-512e-9883-e4e5cbf12a4b",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 4",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "45de0334-183e-53fa-adc1-7bc53b8083e7",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 3",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "1481a749-b771-50b2-8f4c-d0bafdc3fca6",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 21",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none material observed",
+      "review_note": "Distance/displacement and return-to-start example agree with source.",
+      "response_seconds": 3.192330199992284
+    },
+    {
+      "id": "sc02",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "How do I calculate average speed?",
+      "expected_source": "total distance divided by elapsed time; chapter 4 PDF p5",
+      "retrieved_sources": [
+        {
+          "id": "3bbe8473-fbcd-5db1-a78d-7e34968e6f65",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 22",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "2321fc90-9d3e-57b4-941c-619f5ba6ccc1",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 7",
+          "sub_section_name": "PDF page 14",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"
+        },
+        {
+          "id": "ec035463-f3f4-5ecc-9e57-7026f8c19af7",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 8",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "6b3046e7-7147-59c6-830a-32bfe35d8382",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 5",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "c16d9184-0ab6-5b30-b84c-d169b3e1bc8e",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 8",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core_with_caveat",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "overgeneralization",
+      "review_note": "Formula and arithmetic examples correct; statement that average speed is not average of speeds should say not generally (equal-time case is an exception).",
+      "response_seconds": 3.2132126000069547
+    },
+    {
+      "id": "sc03",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "A cyclist travels 150 m in 30 s. What is the average speed? Show the units.",
+      "expected_source": "5 m/s using average-speed equation",
+      "retrieved_sources": [
+        {
+          "id": "3bbe8473-fbcd-5db1-a78d-7e34968e6f65",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 22",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "1838149e-e401-5973-b8b1-e5672fdcb7e5",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 23",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "a21360d5-2039-5cdc-9600-b8fdd468df30",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 22",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "444febbd-b313-56a2-941f-9d8a3542b469",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 23",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "ed85f0eb-901b-505c-a14e-cfbb74d0d9f0",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 7",
+          "sub_section_name": "PDF page 23",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": false,
+      "source_accuracy": "not_established",
+      "explanation_accuracy": "supported_generation_withheld",
+      "contextual_accuracy": "relevant_chapter_wrong_anchor",
+      "unsupported_claims": "none material in calculation",
+      "review_note": "Correct 5 m/s with units withheld; same reply without quotation marks passes. Expected definition page absent from retrieval.",
+      "response_seconds": 2.688822500000242
+    },
+    {
+      "id": "sc04",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "Why is that different from average velocity?",
+      "expected_source": "retain average speed topic; velocity uses displacement/time",
+      "retrieved_sources": [
+        {
+          "id": "3bbe8473-fbcd-5db1-a78d-7e34968e6f65",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 22",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "2321fc90-9d3e-57b4-941c-619f5ba6ccc1",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 7",
+          "sub_section_name": "PDF page 14",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"
+        },
+        {
+          "id": "acc317e4-6add-530c-861d-53c5695b4a06",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 6",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        },
+        {
+          "id": "7b880a5d-2b60-5734-9a87-b5bde2d1a918",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 6",
+          "sub_section_name": "PDF page 21",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc106.pdf"
+        },
+        {
+          "id": "6b3046e7-7147-59c6-830a-32bfe35d8382",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 4",
+          "sub_section_name": "PDF page 5",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none material observed",
+      "review_note": "Retains average-speed topic; displacement/time and worked example correct.",
+      "response_seconds": 2.697053699987009
+    },
+    {
+      "id": "sc05",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "What does the cell membrane do?",
+      "expected_source": "Exploration chapter 2; selective passage of substances",
+      "retrieved_sources": [
+        {
+          "id": "0a6be863-0421-524c-802e-cc7e2f9327da",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 2",
+          "sub_section_name": "PDF page 5",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"
+        },
+        {
+          "id": "ba43f870-e1ee-5455-a843-c8effbe8b0bf",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 2",
+          "sub_section_name": "PDF page 1",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"
+        },
+        {
+          "id": "c5d41f0b-545b-568d-b7e5-e301f7de49c6",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 2",
+          "sub_section_name": "PDF page 4",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"
+        },
+        {
+          "id": "8e79b552-f108-5d1d-8d89-562b8076d1ee",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 2",
+          "sub_section_name": "PDF page 11",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"
+        },
+        {
+          "id": "25eb0889-014d-582d-89d1-56606b8c1fd6",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 2",
+          "sub_section_name": "PDF page 20",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none material observed",
+      "review_note": "Selective permeability and membrane composition supported by chapter 2.",
+      "response_seconds": 2.502928999980213
+    },
+    {
+      "id": "sc06",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "What is a homogeneous mixture? Give a textbook example.",
+      "expected_source": "uniform composition; appropriate source example from chapter 5",
+      "retrieved_sources": [],
+      "expected_chapter_hit": false,
+      "expected_anchor_page_hit": false,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "unnecessary_abstention",
+      "contextual_accuracy": "overblocking",
+      "unsupported_claims": "none observed",
+      "review_note": "Answerable mixture concept stopped before retrieval due to wording textbook example.",
+      "response_seconds": 0.005663299991283566
+    },
+    {
+      "id": "sc07",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "What is the chemical formula of water? What does the 2 mean?",
+      "expected_source": "H2O, two hydrogen atoms per oxygen; chapter 9",
+      "retrieved_sources": [
+        {
+          "id": "1ac0ec9e-974e-5dd7-a03d-b9d2a9d248bd",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 10",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "eb9cd0ec-e3e1-51a5-a585-34eb9b96c0fb",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 10",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "9815786a-a025-5f66-88a6-55df7dd02c40",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 5",
+          "sub_section_name": "PDF page 5",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf"
+        },
+        {
+          "id": "4295dd1b-cc9a-5972-8749-5da01e153023",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 19",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "5ebb7d55-e443-5cef-83e6-cdb2f410e479",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 5",
+          "sub_section_name": "PDF page 6",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core_with_caveat",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "notation needs clarity",
+      "review_note": "Formula and atom counts correct; H+O+H depiction should be labelled an atom-composition sketch, not a reaction equation using elemental gases.",
+      "response_seconds": 2.3539305000158492
+    },
+    {
+      "id": "sc08",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "How does sodium form a positive ion in sodium chloride?",
+      "expected_source": "sodium loses one electron; chapter 9 PDF p11",
+      "retrieved_sources": [
+        {
+          "id": "3f9e5deb-1a87-512e-a729-bc4b5c5545e0",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 5",
+          "sub_section_name": "PDF page 21",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf"
+        },
+        {
+          "id": "b93778e9-f480-51f9-9f68-7e1f9fee3f1a",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 15",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "122b4cc2-b316-5645-8fcc-d93ba3dc053a",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 12",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "8d2f1957-ce77-578a-8e3e-9fbd262c5475",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 11",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        },
+        {
+          "id": "d174c901-1e5e-5e24-9bc5-2fb824fe7225",
+          "board": "cbse",
+          "grade_level": 9,
+          "subject": "Science",
+          "unit_name": "Exploration",
+          "section_name": "iesc1 chapter 9",
+          "sub_section_name": "PDF page 13",
+          "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"
+        }
+      ],
+      "expected_chapter_hit": true,
+      "expected_anchor_page_hit": true,
+      "source_accuracy": "expected_source_present",
+      "explanation_accuracy": "supported_core",
+      "contextual_accuracy": "correct",
+      "unsupported_claims": "none material observed",
+      "review_note": "Losing one electron and ionic attraction correct; top retrieved chunk is irrelevant solubility table, relevant source appears later.",
+      "response_seconds": 2.5703647999907844
+    },
+    {
+      "id": "sc09",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "Explain atoms from chapter 1 of my Science textbook.",
+      "expected_source": "do not confirm incorrect chapter mapping; Exploration chapter 1 is introduction",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "safe_but_incomplete",
+      "contextual_accuracy": "clarification_incomplete",
+      "unsupported_claims": "none observed",
+      "review_note": "Does not invent chapter; should clarify/correct edition and chapter mismatch more helpfully.",
+      "response_seconds": 0.2835078999924008
+    },
+    {
+      "id": "sc10",
+      "selected_curriculum": {
+        "board": "cbse",
+        "grade": 9,
+        "subject": "Science"
+      },
+      "question": "Explain question 7",
+      "expected_source": "ask for chapter/exercise/page; do not guess",
+      "retrieved_sources": [],
+      "expected_chapter_hit": null,
+      "expected_anchor_page_hit": null,
+      "source_accuracy": "not_applicable",
+      "explanation_accuracy": "safe_but_incomplete",
+      "contextual_accuracy": "clarification_incomplete",
+      "unsupported_claims": "none observed",
+      "review_note": "Asks for full source rather than guessing, but does not specifically request missing chapter/exercise.",
+      "response_seconds": 0.27111599998897873
+    }
+  ]
+}

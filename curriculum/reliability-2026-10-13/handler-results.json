@@ -1,0 +1,940 @@
+{
+  "mode": "Offline; no new paid calls or production writes",
+  "results": [
+    {
+      "id": "wrong-speed",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "A cyclist travels 150 m in 30 s. What is the average speed? Show the units.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "A cyclist travels 150 m in 30 s. What is the average speed? Show the units."
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "The average speed is 8 m/s.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "math:speed_value_or_unit"
+      ],
+      "response_latency_seconds": 0.043512600008398294
+    },
+    {
+      "id": "wrong-unit",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "A cyclist travels 150 m in 30 s. What is the average speed? Show the units.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "A cyclist travels 150 m in 30 s. What is the average speed? Show the units."
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "The speed is 5 m/s².",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "math:speed_value_or_unit"
+      ],
+      "response_latency_seconds": 0.035676400002557784
+    },
+    {
+      "id": "fake-page",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "A cyclist travels 150 m in 30 s. What is the average speed? Show the units.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "A cyclist travels 150 m in 30 s. What is the average speed? Show the units."
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "According to your textbook page 52, speed is 5 m/s.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "attribution:unverified_page_or_textbook"
+      ],
+      "response_latency_seconds": 0.035384599992539734
+    },
+    {
+      "id": "chapter-conflict",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain atoms from chapter 1 of my Science textbook.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "chapter 9",
+      "retrieval_queries": [
+        "Explain atoms from chapter 1 of my Science textbook."
+      ],
+      "retrieved_sources": [
+        "cbse9-atoms"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": null,
+      "displayed_answer": "In the selected NCERT Exploration Grade 9 (2026), Atomic Foundations of Matter is chapter 9. Would you like that chapter, or the chapter you named?\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Atomic Foundations of Matter](https://ncert.nic.in/textbook/pdf/iesc109.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03246529999887571
+    },
+    {
+      "id": "question-reference",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain question 7 on page 52 of my textbook.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [],
+      "expected_educational_concept": "share",
+      "retrieval_queries": [
+        "Explain question 7 on page 52 of my textbook."
+      ],
+      "retrieved_sources": [],
+      "source_relevance": "none established",
+      "generated_answer": null,
+      "displayed_answer": "I could not verify that specific textbook passage. Please share the page image or the full question. I can still explain the general concept.",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03441049999673851
+    },
+    {
+      "id": "missing-question-parent",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain question 7.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [],
+      "expected_educational_concept": "Which chapter and exercise",
+      "retrieval_queries": [
+        "Explain question 7."
+      ],
+      "retrieved_sources": [],
+      "source_relevance": "none established",
+      "generated_answer": null,
+      "displayed_answer": "Which chapter and exercise contains question 7? Please share the full question or page image.",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.0342872999899555
+    },
+    {
+      "id": "water-wrong",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "What is in a water molecule?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "What is in a water molecule?"
+      ],
+      "retrieved_sources": [
+        "cbse9-water"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Water is H₂O₂.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:water_formula"
+      ],
+      "response_latency_seconds": 0.038101799989817664
+    },
+    {
+      "id": "sodium-wrong",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How does sodium form a positive ion?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "How does sodium form a positive ion?"
+      ],
+      "retrieved_sources": [
+        "cbse9-sodium"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Sodium gains one electron to become positive.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:sodium_electron_loss"
+      ],
+      "response_latency_seconds": 0.03824869997333735
+    },
+    {
+      "id": "wrong-chapter",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How does sodium form a positive ion?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "How does sodium form a positive ion?"
+      ],
+      "retrieved_sources": [
+        "cbse9-sodium"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "In chapter 1, sodium loses one electron.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "curriculum:chapter_not_supported"
+      ],
+      "response_latency_seconds": 0.038066300010541454
+    },
+    {
+      "id": "wrong-edition",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain a homogeneous mixture.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "Explain a homogeneous mixture."
+      ],
+      "retrieved_sources": [
+        "cbse9-mixtures"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "The 2024 edition explains that it has uniform composition.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "curriculum:edition_or_term_not_supported"
+      ],
+      "response_latency_seconds": 0.03439390001585707
+    },
+    {
+      "id": "ta08-followup",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "அவற்றுக்கு எடுத்துக்காட்டு கொடு",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "நெடில்",
+      "retrieval_queries": [
+        "உயிர் எழுத்துகள் எத்தனை? அவற்றின் பொருள் என்ன? அவற்றுக்கு எடுத்துக்காட்டு கொடு"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": null,
+      "displayed_answer": "தமிழ் உயிரெழுத்துகள் மொத்தம் 12. குறில் எழுத்துகள் 5: அ, இ, உ, எ, ஒ. நெடில் எழுத்துகள் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.\n\nகுறில் ஒலிக்கும் கால அளவு ஒரு மாத்திரை; நெடில் ஒலிக்கும் கால அளவு இரண்டு மாத்திரை.\n\nகற்றலுக்கான ஒப்பீடு (மூல மேற்கோள் அல்ல): அ–ஆ, இ–ஈ, உ–ஊ ஆகிய எழுத்துகளை ஒலித்து குறில், நெடில் வேறுபாட்டைக் கவனிக்கலாம்.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, உயிரெழுத்துகள் — குறில், நெடில், pp. 18, 19](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": true,
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.0336570999934338
+    },
+    {
+      "id": "velocity-followup",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How is it different from average velocity?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "displacement",
+      "retrieval_queries": [
+        "What is average speed? How is it different from average velocity?"
+      ],
+      "retrieved_sources": [
+        "cbse9-speed",
+        "cbse9-velocity"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Average velocity uses displacement and direction; average speed uses distance.",
+      "displayed_answer": "Average velocity uses displacement and direction; average speed uses distance.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Average speed, pp. 52, 53](https://ncert.nic.in/textbook/pdf/iesc104.pdf)\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Average velocity, pp. 53, 54](https://ncert.nic.in/textbook/pdf/iesc104.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": true,
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03328440000768751
+    },
+    {
+      "id": "sc03-replay",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "A cyclist travels 150 m in 30 s. What is the average speed? Show the units.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "5 m/s",
+      "retrieval_queries": [
+        "A cyclist travels 150 m in 30 s. What is the average speed? Show the units."
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "**Average speed** is the total distance covered divided by the total time taken.\n\n**Formula:**\nAverage speed = Total distance ÷ Total time\n\n**Working:**\n- Distance = 150 m\n- Time = 30 s\n- Average speed = 150 m ÷ 30 s = **5 m/s**\n\n**Final answer:** The cyclist's average speed is **5 m/s** (read as \"5 metres per second\").\n\n**Note on units:** The unit of speed is metres per second (m/s) because distance is in metres (m) and time is in seconds (s). The unit m/s tells us the cyclist covers 5 metres every second.\n\nThis is the *average* speed — it does not mean the cyclist moved at exactly 5 m/s every moment; the speed could have been higher in some parts and lower in others, but overall it works out to 5 m/s.",
+      "displayed_answer": "**Average speed** is the total distance covered divided by the total time taken.\n\n**Formula:**\nAverage speed = Total distance ÷ Total time\n\n**Working:**\n- Distance = 150 m\n- Time = 30 s\n- Average speed = 150 m ÷ 30 s = **5 m/s**\n\n**Final answer:** The cyclist's average speed is **5 m/s** (read as \"5 metres per second\").\n\n**Note on units:** The unit of speed is metres per second (m/s) because distance is in metres (m) and time is in seconds (s). The unit m/s tells us the cyclist covers 5 metres every second.\n\nThis is the *average* speed — it does not mean the cyclist moved at exactly 5 m/s every moment; the speed could have been higher in some parts and lower in others, but overall it works out to 5 m/s.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Average speed, pp. 52, 53](https://ncert.nic.in/textbook/pdf/iesc104.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.04200929999933578
+    },
+    {
+      "id": "sc02-precision-replay",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How do I calculate average speed?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "How do I calculate average speed?"
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Average speed tells you how fast an object moves overall, ignoring direction.\n\n**Formula:**\nAverage speed = Total distance travelled ÷ Total time taken\n\nHere, *distance* means the total length of the path covered (it has size only, no direction), and *time* is the total duration.\n\n**Example:**\nA car travels 60 km in 2 hours.\nAverage speed = 60 km ÷ 2 h = **30 km/h**\n\n**Important point:**\nAverage speed is *not* the average of the speeds. You must use total distance and total time.\n\n**Example with two parts:**\nA bus goes 30 km at 30 km/h (takes 1 h), then 60 km at 60 km/h (takes 1 h).\n- Total distance = 30 + 60 = 90 km\n- Total time = 1 + 1 = 2 h\n- Average speed = 90 ÷ 2 = **45 km/h**\n\nWould you like a practice numerical with unit conversion (km/h to m/s)?",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:speed_mean_qualification"
+      ],
+      "response_latency_seconds": 0.04092450000462122
+    },
+    {
+      "id": "sc07-precision-replay",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "What is the chemical formula of water? What does the 2 mean?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "could not verify",
+      "retrieval_queries": [
+        "What is the chemical formula of water? What does the 2 mean?"
+      ],
+      "retrieved_sources": [
+        "cbse9-water"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "The chemical formula of water is **H₂O**.\n\n**What the \"2\" means:**  \nIt is a **subscript** (small number written below and to the right of a symbol). It tells us the **number of atoms of that element** in one molecule of the compound. So in H₂O:\n\n- **H₂** → 2 atoms of hydrogen\n- **O** → 1 atom of oxygen\n\n**Why water is written this way:**  \nA water molecule is formed when **two hydrogen atoms** combine with **one oxygen atom**. This is shown as:\n\nH + O + H → H₂O\n\nSo the formula H₂O indicates the presence of **two hydrogen atoms** and **one oxygen atom** in each water molecule.\n\n**Quick check:** If there is no subscript after a symbol (like O), it means only **one atom** of that element is present.",
+      "displayed_answer": "I could not verify this answer. Please share the full question or source page.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:composition_not_reaction"
+      ],
+      "response_latency_seconds": 0.038300399988656864
+    },
+    {
+      "id": "ta08-original-replay",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "அவற்றுக்கு எடுத்துக்காட்டு கொடு",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "அ–ஆ",
+      "retrieval_queries": [
+        "உயிர் எழுத்துகள் எத்தனை? அவற்றுக்கு எடுத்துக்காட்டு கொடு"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": null,
+      "displayed_answer": "தமிழ் உயிரெழுத்துகள் மொத்தம் 12. குறில் எழுத்துகள் 5: அ, இ, உ, எ, ஒ. நெடில் எழுத்துகள் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.\n\nகுறில் ஒலிக்கும் கால அளவு ஒரு மாத்திரை; நெடில் ஒலிக்கும் கால அளவு இரண்டு மாத்திரை.\n\nகற்றலுக்கான ஒப்பீடு (மூல மேற்கோள் அல்ல): அ–ஆ, இ–ஈ, உ–ஊ ஆகிய எழுத்துகளை ஒலித்து குறில், நெடில் வேறுபாட்டைக் கவனிக்கலாம்.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, உயிரெழுத்துகள் — குறில், நெடில், pp. 18, 19](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": true,
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.033323700015898794
+    },
+    {
+      "id": "ta07-replay-0",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "உயிர் எழுத்துகள் எத்தனை?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "உறுதிப்படுத்த முடியவில்லை",
+      "retrieval_queries": [
+        "உயிர் எழுத்துகள் எத்தனை?"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "உயிர் எழுத்துகள் **பன்னிரெண்டு (12)**.\n\nஅ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ — இவையே அவை.\n\nஇதில் **குறில்** எழுத்துகள் ஏழு: அ, இ, உ, எ, ஒ, ஐ, ஔ.\n**நெடில்** எழுத்துகள் ஐந்து: ஆ, ஈ, ஊ, ஏ, ஓ.\n\nஎடுத்துக்காட்டு: \"அம்மா\" என்பதில் அ, ஆ இரண்டும் உயிர் எழுத்துகள்.\n\nஉயிர் எழுத்துகள் பன்னிரெண்டும் மெய் எழுத்துகள் பதினெட்டும் சேர்ந்து முப்பது **முதல் எழுத்துகள்** ஆகும்.",
+      "displayed_answer": "இந்தப் பதிலை ஆதாரத்துடன் உறுதிப்படுத்த முடியவில்லை. முழுக் கேள்வியை அல்லது நூலின் படத்தை அனுப்புங்கள்.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:vowel_count",
+        "fact:vowel_classification"
+      ],
+      "response_latency_seconds": 0.03830350001226179
+    },
+    {
+      "id": "ta07-replay-1",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "உயிர் எழுத்துகள் எத்தனை?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "உறுதிப்படுத்த முடியவில்லை",
+      "retrieval_queries": [
+        "உயிர் எழுத்துகள் எத்தனை?"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "உயிர் எழுத்துகள் **பன்னிரெண்டு (12)**.\n\nஅ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ — இவையே அவை.\n\nஇதில் **குறில்** எழுத்துகள் ஏழு: அ, இ, உ, எ, ஒ, ஐ, ஔ.\n**நெடில்** எழுத்துகள் ஐந்து: ஆ, ஈ, ஊ, ஏ, ஓ.\n\nஎடுத்துக்காட்டு: அம்மா என்பதில் அ, ஆ இரண்டும் உயிர் எழுத்துகள்.\n\nஉயிர் எழுத்துகள் பன்னிரெண்டும் மெய் எழுத்துகள் பதினெட்டும் சேர்ந்து முப்பது **முதல் எழுத்துகள்** ஆகும்.",
+      "displayed_answer": "இந்தப் பதிலை ஆதாரத்துடன் உறுதிப்படுத்த முடியவில்லை. முழுக் கேள்வியை அல்லது நூலின் படத்தை அனுப்புங்கள்.",
+      "expected_generated_accuracy": "deliberate invalid claim",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [
+        "fact:vowel_count",
+        "fact:vowel_classification"
+      ],
+      "response_latency_seconds": 0.040132900001481175
+    },
+    {
+      "id": "stored-topic",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "அவற்றுக்கு எடுத்துக்காட்டு கொடு",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "நெடில்",
+      "retrieval_queries": [
+        "உயிர் எழுத்து அவற்றுக்கு எடுத்துக்காட்டு கொடு"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": null,
+      "displayed_answer": "தமிழ் உயிரெழுத்துகள் மொத்தம் 12. குறில் எழுத்துகள் 5: அ, இ, உ, எ, ஒ. நெடில் எழுத்துகள் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.\n\nகுறில் ஒலிக்கும் கால அளவு ஒரு மாத்திரை; நெடில் ஒலிக்கும் கால அளவு இரண்டு மாத்திரை.\n\nகற்றலுக்கான ஒப்பீடு (மூல மேற்கோள் அல்ல): அ–ஆ, இ–ஈ, உ–ஊ ஆகிய எழுத்துகளை ஒலித்து குறில், நெடில் வேறுபாட்டைக் கவனிக்கலாம்.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, உயிரெழுத்துகள் — குறில், நெடில், pp. 18, 19](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "local correction/clarification or rejection",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.034280799998668954
+    },
+    {
+      "id": "new-topic",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "வளர்தமிழ் பற்றி விளக்கு",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "வளர்கிறது",
+      "retrieval_queries": [
+        "வளர்தமிழ் பற்றி விளக்கு"
+      ],
+      "retrieved_sources": [
+        "tn6-valartamil"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "தமிழ் காலத்திற்கு ஏற்ப வளர்கிறது.",
+      "displayed_answer": "தமிழ் காலத்திற்கு ஏற்ப வளர்கிறது.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, வளர்தமிழ், pp. 8, 10, 11](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03662790000089444
+    },
+    {
+      "id": "author",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "இன்பத்தமிழ் பாடலை எழுதியவர் யார்?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "பாரதிதாசன்",
+      "retrieval_queries": [
+        "இன்பத்தமிழ் பாடலை எழுதியவர் யார்?"
+      ],
+      "retrieved_sources": [
+        "tn6-inbathamil"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "இன்பத்தமிழ் பாடலை இயற்றியவர் பாரதிதாசன்.",
+      "displayed_answer": "இன்பத்தமிழ் பாடலை இயற்றியவர் பாரதிதாசன்.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, இன்பத்தமிழ், pp. 2, 3](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03892369999084622
+    },
+    {
+      "id": "author-heldout",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "இன்பத்தமிழ் ஆசிரியர் பெயர் என்ன?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "பாரதிதாசன்",
+      "retrieval_queries": [
+        "இன்பத்தமிழ் ஆசிரியர் பெயர் என்ன?"
+      ],
+      "retrieved_sources": [
+        "tn6-inbathamil"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "இன்பத்தமிழ் பாடலை இயற்றியவர் பாரதிதாசன்.",
+      "displayed_answer": "இன்பத்தமிழ் பாடலை இயற்றியவர் பாரதிதாசன்.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, இன்பத்தமிழ், pp. 2, 3](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03489810001337901
+    },
+    {
+      "id": "valartamil",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "வளர்தமிழ் பாடத்தில் தமிழ் காலத்திற்கு ஏற்ப எவ்வாறு வளர்கிறது?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "வளர்கிறது",
+      "retrieval_queries": [
+        "வளர்தமிழ் பாடத்தில் தமிழ் காலத்திற்கு ஏற்ப எவ்வாறு வளர்கிறது?"
+      ],
+      "retrieved_sources": [
+        "tn6-valartamil"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "தமிழ் புதிய அறிவியல், தொழில்நுட்பச் சொற்களால் வளர்கிறது.",
+      "displayed_answer": "தமிழ் புதிய அறிவியல், தொழில்நுட்பச் சொற்களால் வளர்கிறது.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, வளர்தமிழ், pp. 8, 10, 11](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03794440001365729
+    },
+    {
+      "id": "valartamil-heldout",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "வளர்தமிழ் மொழியின் மாற்றத்தை எப்படிக் காட்டுகிறது?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "கணினித்",
+      "retrieval_queries": [
+        "வளர்தமிழ் மொழியின் மாற்றத்தை எப்படிக் காட்டுகிறது?"
+      ],
+      "retrieved_sources": [
+        "tn6-valartamil"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "தமிழில் புதிய இலக்கிய வடிவங்களும் கணினித் தமிழும் வளர்கின்றன.",
+      "displayed_answer": "தமிழில் புதிய இலக்கிய வடிவங்களும் கணினித் தமிழும் வளர்கின்றன.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, வளர்தமிழ், pp. 8, 10, 11](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.034806700015906245
+    },
+    {
+      "id": "vowels",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "உயிரெழுத்துகள் எத்தனை வகை?",
+      "board": "tn",
+      "grade": 6,
+      "subject": "Tamil",
+      "edition": [
+        "2024"
+      ],
+      "expected_educational_concept": "நெடில் 7",
+      "retrieval_queries": [
+        "உயிரெழுத்துகள் எத்தனை வகை?"
+      ],
+      "retrieved_sources": [
+        "tn6-vowels"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "குறில் 5: அ, இ, உ, எ, ஒ. நெடில் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.",
+      "displayed_answer": "குறில் 5: அ, இ, உ, எ, ஒ. நெடில் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.\n\nமுக்கிய கருத்துகளுக்கான ஆதாரம்:\n[Source: SCERT Class 6 Tamil Term I — 2024 reprint, உயிரெழுத்துகள் — குறில், நெடில், pp. 18, 19](https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.034879199985880405
+    },
+    {
+      "id": "mixture",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "What is a homogeneous mixture? Give a textbook example.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "uniform composition",
+      "retrieval_queries": [
+        "What is a homogeneous mixture? Give a textbook example."
+      ],
+      "retrieved_sources": [
+        "cbse9-mixtures"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "A homogeneous mixture has uniform composition. Sugar dissolved in water is an example.",
+      "displayed_answer": "A homogeneous mixture has uniform composition. Sugar dissolved in water is an example.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Homogeneous mixtures, pp. 73, 74](https://ncert.nic.in/textbook/pdf/iesc105.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03823899998678826
+    },
+    {
+      "id": "mixture-heldout",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain homogeneous mixtures with a textbook example.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "sugar",
+      "retrieval_queries": [
+        "Explain homogeneous mixtures with a textbook example."
+      ],
+      "retrieved_sources": [
+        "cbse9-mixtures"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "A homogeneous mixture has uniform composition, such as sugar dissolved in water.",
+      "displayed_answer": "A homogeneous mixture has uniform composition, such as sugar dissolved in water.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Homogeneous mixtures, pp. 73, 74](https://ncert.nic.in/textbook/pdf/iesc105.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.035638000001199543
+    },
+    {
+      "id": "sodium",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How does sodium form a positive ion?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "loses one electron",
+      "retrieval_queries": [
+        "How does sodium form a positive ion?"
+      ],
+      "retrieved_sources": [
+        "cbse9-sodium"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Sodium loses one electron, forming Na⁺ with 11 protons and 10 electrons.",
+      "displayed_answer": "Sodium loses one electron, forming Na⁺ with 11 protons and 10 electrons.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Sodium ion formation, pp. 172](https://ncert.nic.in/textbook/pdf/iesc109.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03587130000232719
+    },
+    {
+      "id": "sodium-heldout",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Why is the charge on a sodium ion positive?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "loses one electron",
+      "retrieval_queries": [
+        "Why is the charge on a sodium ion positive?"
+      ],
+      "retrieved_sources": [
+        "cbse9-sodium"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Sodium loses one electron, leaving more protons than electrons.",
+      "displayed_answer": "Sodium loses one electron, leaving more protons than electrons.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Sodium ion formation, pp. 172](https://ncert.nic.in/textbook/pdf/iesc109.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.0382343000092078
+    },
+    {
+      "id": "water",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain a water molecule.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "one oxygen",
+      "retrieval_queries": [
+        "Explain a water molecule."
+      ],
+      "retrieved_sources": [
+        "cbse9-water"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "H₂O means two hydrogen atoms and one oxygen atom.",
+      "displayed_answer": "H₂O means two hydrogen atoms and one oxygen atom.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Water composition, pp. 171](https://ncert.nic.in/textbook/pdf/iesc109.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.0357676999992691
+    },
+    {
+      "id": "speed-reasoning",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "How do I calculate average speed?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "equal time",
+      "retrieval_queries": [
+        "How do I calculate average speed?"
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Average speed is total distance divided by total time. The mean of separate speeds applies for equal time intervals.",
+      "displayed_answer": "Average speed is total distance divided by total time. The mean of separate speeds applies for equal time intervals.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Average speed, pp. 52, 53](https://ncert.nic.in/textbook/pdf/iesc104.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.03506809999817051
+    },
+    {
+      "id": "speed-heldout",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "A runner covers 240 m in 40 s. What is the speed?",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "6 m/s",
+      "retrieval_queries": [
+        "A runner covers 240 m in 40 s. What is the speed?"
+      ],
+      "retrieved_sources": [
+        "cbse9-speed"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "240 ÷ 40 = 6 m/s, or \"6 metres per second\".",
+      "displayed_answer": "240 ÷ 40 = 6 m/s, or \"6 metres per second\".\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Average speed, pp. 52, 53](https://ncert.nic.in/textbook/pdf/iesc104.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.036554799997247756
+    },
+    {
+      "id": "membrane",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Explain the cell membrane.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "selectively",
+      "retrieval_queries": [
+        "Explain the cell membrane."
+      ],
+      "retrieved_sources": [
+        "cbse9-membrane"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "The cell membrane selectively allows substances to pass.",
+      "displayed_answer": "The cell membrane selectively allows substances to pass.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Cell membrane, pp. 11, 12](https://ncert.nic.in/textbook/pdf/iesc102.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.037849699991056696
+    },
+    {
+      "id": "distance",
+      "mode": "offline actual-handler / controlled provider",
+      "question": "Compare distance and displacement.",
+      "board": "cbse",
+      "grade": 9,
+      "subject": "Science",
+      "edition": [
+        "2026"
+      ],
+      "expected_educational_concept": "direction",
+      "retrieval_queries": [
+        "Compare distance and displacement."
+      ],
+      "retrieved_sources": [
+        "cbse9-distance"
+      ],
+      "source_relevance": "bounded exact topic match",
+      "generated_answer": "Distance is path length; displacement is the net change in position with direction.",
+      "displayed_answer": "Distance is path length; displacement is the net change in position with direction.\n\nSource basis for the core facts:\n[Source: NCERT Exploration Grade 9 — First edition April 2026, Distance and displacement, pp. 50, 51](https://ncert.nic.in/textbook/pdf/iesc104.pdf)",
+      "expected_generated_accuracy": "supported critical claims",
+      "explanation_accuracy": "critical assertions only; not independent educator review",
+      "context_retention": "not applicable",
+      "guard_decision": "displayed",
+      "guard_diagnostics": [],
+      "response_latency_seconds": 0.040660500002559274
+    }
+  ]
+}

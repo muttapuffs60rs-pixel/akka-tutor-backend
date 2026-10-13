@@ -1,0 +1,23 @@
+{
+  "scope": "Local warm microbenchmarks, no network/provider latency, not a load test",
+  "measurements": {
+    "reviewed_topic_lookup": {
+      "iterations": 200,
+      "median_ms": 0.059250000049360096,
+      "p95_ms": 0.09449999197386205,
+      "max_ms": 6.285100011155009
+    },
+    "warm_tamil_lexical_1171_rows": {
+      "iterations": 200,
+      "median_ms": 22.221149993129075,
+      "p95_ms": 31.639099994208664,
+      "max_ms": 39.24430001643486
+    },
+    "critical_fact_guard": {
+      "iterations": 200,
+      "median_ms": 0.028099981136620045,
+      "p95_ms": 0.03779999678954482,
+      "max_ms": 5.86860001203604
+    }
+  }
+}

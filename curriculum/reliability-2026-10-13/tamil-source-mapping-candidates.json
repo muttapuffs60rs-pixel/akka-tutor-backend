@@ -1,0 +1,41 @@
+{
+  "production_changes": 0,
+  "mappings": [
+    {
+      "document_id": "f3990c10-0a51-5f00-b2f9-df8d3fd6f0bc",
+      "document_content_sha256": "784a7095fd27785dfde1c9db46b3e4878fd37ae782880658248b03fa862600e9",
+      "candidate_source_id": "tn6-inbathamil",
+      "candidate_source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "candidate_pdf_pages": [
+        10,
+        11
+      ],
+      "status": "topic_correspondence_only_not_edition_verified",
+      "basis": "Matching poem title and author/bio facts visible on official source. Existing chunk edition/page identity is missing; no exact full-passage source match established. Do not promote as verified."
+    },
+    {
+      "document_id": "83a8e1fe-8dc7-5311-b977-7bf274791339",
+      "document_content_sha256": "84e736485933ba463b2da636c9d635994273d9157f89fc6bd7ee970b27ebc7e5",
+      "candidate_source_id": "tn6-inbathamil",
+      "candidate_source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "candidate_pdf_pages": [
+        10,
+        11
+      ],
+      "status": "topic_correspondence_only_not_edition_verified",
+      "basis": "Matching poem title and author/bio facts visible on official source. Existing chunk edition/page identity is missing; no exact full-passage source match established. Do not promote as verified."
+    },
+    {
+      "document_id": "cb7033ea-e4c1-551c-b99c-53881a6a1c94",
+      "document_content_sha256": "8ba087ba3394a1813e3849d57e729469fe8fb57b5c3aaa4447b908c4b2eb0e08",
+      "candidate_source_id": "tn6-inbathamil",
+      "candidate_source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "candidate_pdf_pages": [
+        10,
+        11
+      ],
+      "status": "topic_correspondence_only_not_edition_verified",
+      "basis": "Matching poem title and author/bio facts visible on official source. Existing chunk edition/page identity is missing; no exact full-passage source match established. Do not promote as verified."
+    }
+  ]
+}

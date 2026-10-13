@@ -4,7 +4,7 @@ import ast
 import asyncio
 from pathlib import Path
 from types import SimpleNamespace
-from typing import List
+from typing import List, Literal
 import traceback
 import unittest
 from unittest.mock import Mock, patch
@@ -33,7 +33,7 @@ def load_routes():
     for node in definitions:
         node.decorator_list = []
     namespace = {
-        "List": List, "BaseModel": BaseModel, "Field": Field,
+        "List": List, "Literal": Literal, "BaseModel": BaseModel, "Field": Field,
         "asyncio": asyncio, "traceback": traceback, "HTTPException": HTTPException,
         "Depends": Depends, "get_current_user": lambda: None,
         "ChatPromptTemplate": ChatPromptTemplate, "AKKA_QUIZ_PROMPT": AKKA_QUIZ_PROMPT,
@@ -125,6 +125,28 @@ class QuizRouteTests(unittest.IsolatedAsyncioTestCase):
             await self.routes["generate_quiz"](self.request, "student")
         self.assertEqual(error.exception.status_code, 403)
         self.model.with_structured_output.assert_not_called()
+
+    async def test_missing_source_never_generates_quiz(self):
+        self.context.return_value = 'No specific textbook context found.'
+        with self.assertRaises(HTTPException) as error:
+            await self.routes['generate_quiz'](self.request, 'student')
+        self.assertEqual(error.exception.status_code,503)
+        self.model.with_structured_output.assert_not_called()
+        self.database.rpc.assert_called_with('release_daily_quiz', {
+            'target_user_id':'student','usage_date':'2026-10-08'})
+
+    async def test_cbse_quiz_retrieval_uses_board(self):
+        self.request.board = 'cbse'
+        result=await self.routes['generate_quiz'](self.request,'student')
+        self.assertEqual(self.context.call_args.kwargs['board'],'cbse')
+        self.assertIn('CBSE / NCERT',self.prompts[0])
+        self.assertEqual(result['verification'],'generated_unreviewed')
+
+    async def test_false_numeric_explanation_is_rejected(self):
+        self.set_model_output([{**self.question,'explanation':'2 + 3 = 6'}])
+        with self.assertRaises(HTTPException) as error:
+            await self.routes['generate_quiz'](self.request,'student')
+        self.assertEqual(error.exception.status_code,502)
 
     async def test_invalid_model_answers_release_the_daily_slot(self):
         self.set_model_output([{**self.question, "correct_answer": "Z"}])

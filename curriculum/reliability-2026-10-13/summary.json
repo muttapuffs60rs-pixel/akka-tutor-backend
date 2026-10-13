@@ -1,0 +1,11 @@
+{
+  "scenarios": 34,
+  "controlled_generations": 28,
+  "supported_candidates": 17,
+  "invalid_candidates": 11,
+  "false_acceptances": 0,
+  "false_rejections": 0,
+  "local_answers_or_clarifications": 6,
+  "median_handler_ms": 36.21304999978747,
+  "max_handler_ms": 43.512600008398294
+}

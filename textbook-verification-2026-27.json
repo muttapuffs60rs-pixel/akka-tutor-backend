@@ -1,0 +1,37 @@
+{
+  "requested_academic_year": "2026-27",
+  "academic_year_verified": false,
+  "checked_date": "2026-10-12",
+  "official_catalogue": "https://tnschools.gov.in/scert-textbook",
+  "official_catalogue_api": "https://emis3.tnschools.gov.in/api/get_scert_books",
+  "result": "Selection 7 -> canonical 72 visually verified for 2024 reprints; not verified for requested 2026-27 school year.",
+  "reviewed_records": [
+    {
+      "id": "scert-tn-6-tamil-2024-p49-s7",
+      "board": "tn",
+      "edition": "2024",
+      "term": "Term-I",
+      "page_number": 49,
+      "pdf_page": 57,
+      "source_url": "https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf",
+      "source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "canonical_reference": "thirukkural:72"
+    },
+    {
+      "id": "scert-cbse-6-tamil-2024-p49-s7",
+      "board": "cbse",
+      "edition": "2024",
+      "term": "Annual",
+      "page_number": 49,
+      "pdf_page": 59,
+      "source_url": "https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil_CBSE_Text.pdf",
+      "source_sha256": "1e8e6e23442dd1beed382a095b37151b2fc7c03f8a38be95d7a8259cdc22e1dd",
+      "canonical_reference": "thirukkural:72"
+    }
+  ],
+  "unavailable_downloads": [
+    "Official catalogue Term-II and Term-III URLs returned HTTP 403; no conclusions drawn from inaccessible files."
+  ],
+  "needed_evidence": "Student book imprint/edition page, or official adoption/unchanged-edition evidence for 2026-27.",
+  "production_changed": false
+}

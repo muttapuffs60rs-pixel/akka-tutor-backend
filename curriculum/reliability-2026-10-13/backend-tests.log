@@ -1,0 +1,31 @@
+.................Executing <Task pending name='Task-73' coro=<AccuracyPipelineTests.test_retrieval_failure_does_not_claim_textbook_verification() running at C:\Users\dines\AuxiumSoft\Tutor Preethi\Tutor AI\tests\test_accuracy_pipeline.py:98> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\dines\AppData\Local\Programs\Python\Python312\Lib\asyncio\futures.py:389, Task.task_wakeup()] created at C:\Users\dines\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\dines\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] created at C:\Users\dines\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 0.109 seconds
+..Answer library lookup unavailable; using normal tutoring
+Could not save answer review candidate
+..........C:\Users\dines\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_client.py:690: DeprecationWarning: The 'app' shortcut is now deprecated. Use the explicit style 'transport=WSGITransport(app=...)' instead.
+  warnings.warn(message, DeprecationWarning)
+.........................................................................................................
+----------------------------------------------------------------------
+Ran 134 tests in 5.927s
+
+OK
+[OCR] Extracted 13 words from image.
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+[OCR] Extracted 13 words from image.
+[OCR] Extracted 13 words from image.
+[OCR] Extracted 13 words from image.
+Textbook chapter labels unavailable; using retrieved passages
+Textbook lookup attempt 1 failed: TimeoutError
+Textbook lookup attempt 1 failed: TimeoutError
+Textbook lookup attempt 2 failed: TimeoutError
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply
+Educational quality guard rejected reply

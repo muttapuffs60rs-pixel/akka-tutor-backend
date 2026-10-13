@@ -1,0 +1,414 @@
+{
+  "scope": "11 bounded topic records. No production rows verified or changed. Kural remains in class6-tamil-p49.json.",
+  "records": [
+    {
+      "id": "tn6-inbathamil",
+      "board": "tn",
+      "grade_level": 6,
+      "subject": "Tamil",
+      "edition": "2024",
+      "academic_year": null,
+      "term": "Term-I",
+      "book_code": null,
+      "section_name": "இன்பத்தமிழ்",
+      "source_title": "SCERT Class 6 Tamil Term I — 2024 reprint",
+      "source_url": "https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf",
+      "source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "chapter_number": null,
+      "pdf_pages": [
+        10,
+        11
+      ],
+      "printed_pages": [
+        2,
+        3
+      ],
+      "aliases": [
+        "இன்பத்தமிழ்",
+        "இன்பத் தமிழ்",
+        "inbathamil"
+      ],
+      "source_facts": [
+        "இன்பத்தமிழ் பாடலை இயற்றியவர் பாரதிதாசன்.",
+        "பாடலின் பொருளில் இன்பம் தரும் தமிழ் உயிருக்கு இணையானதாகக் கூறப்படுகிறது. தமிழ் சமூக வளர்ச்சிக்கும் அறிவுக்கும் துணையாகக் காட்டப்படுகிறது."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "Tamil"
+    },
+    {
+      "id": "tn6-valartamil",
+      "board": "tn",
+      "grade_level": 6,
+      "subject": "Tamil",
+      "edition": "2024",
+      "academic_year": null,
+      "term": "Term-I",
+      "book_code": null,
+      "section_name": "வளர்தமிழ்",
+      "source_title": "SCERT Class 6 Tamil Term I — 2024 reprint",
+      "source_url": "https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf",
+      "source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "chapter_number": null,
+      "pdf_pages": [
+        16,
+        18,
+        19
+      ],
+      "printed_pages": [
+        8,
+        10,
+        11
+      ],
+      "aliases": [
+        "வளர்தமிழ்",
+        "வளர் தமிழ்",
+        "valartamil"
+      ],
+      "source_facts": [
+        "வளர்தமிழ் தமிழ் காலத்திற்கு ஏற்ப தன்னைத் தகவமைத்துக்கொள்வதை விளக்குகிறது.",
+        "தமிழில் புதிய இலக்கிய வடிவங்களும் அறிவியல் தமிழ், கணினித் தமிழ் போன்ற துறைகளும் வளர்கின்றன.",
+        "அறிவியல், தொழில்நுட்ப வளர்ச்சிக்கு ஏற்ப புதிய கலைச்சொற்கள் உருவாகின்றன. இணையம், முகநூல், புலனம் போன்ற சொற்கள் எடுத்துக்காட்டுகளாக வருகின்றன."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "Tamil"
+    },
+    {
+      "id": "tn6-vowels",
+      "board": "tn",
+      "grade_level": 6,
+      "subject": "Tamil",
+      "edition": "2024",
+      "academic_year": null,
+      "term": "Term-I",
+      "book_code": null,
+      "section_name": "உயிரெழுத்துகள் — குறில், நெடில்",
+      "source_title": "SCERT Class 6 Tamil Term I — 2024 reprint",
+      "source_url": "https://d1e5r329t7a85t.cloudfront.net/syllabuspdf/6th_Tamil%20%26%20English%20Term%201_Text.pdf",
+      "source_sha256": "afa5cd0c44311ef069cda4a2dc39d34acfbc0acc9ce3b19470a6e40a3afceae2",
+      "chapter_number": null,
+      "pdf_pages": [
+        26,
+        27
+      ],
+      "printed_pages": [
+        18,
+        19
+      ],
+      "aliases": [
+        "உயிர் எழுத்து",
+        "உயிரெழுத்து",
+        "குறில்",
+        "நெடில்",
+        "Tamil vowels",
+        "short vowels",
+        "long vowels"
+      ],
+      "source_facts": [
+        "தமிழ் உயிரெழுத்துகள் மொத்தம் 12. குறில் எழுத்துகள் 5: அ, இ, உ, எ, ஒ. நெடில் எழுத்துகள் 7: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ.",
+        "குறில் ஒலிக்கும் கால அளவு ஒரு மாத்திரை; நெடில் ஒலிக்கும் கால அளவு இரண்டு மாத்திரை."
+      ],
+      "teaching_derivations": [
+        "கற்றலுக்கான ஒப்பீடு (மூல மேற்கோள் அல்ல): அ–ஆ, இ–ஈ, உ–ஊ ஆகிய எழுத்துகளை ஒலித்து குறில், நெடில் வேறுபாட்டைக் கவனிக்கலாம்."
+      ],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "Tamil"
+    },
+    {
+      "id": "cbse9-distance",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Distance and displacement",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf",
+      "source_sha256": "9a9299f272e2e760b7b58e4ecbf697fd65e51ab0fe181d55c0aff8ce4d19e8a4",
+      "chapter_number": 4,
+      "pdf_pages": [
+        3,
+        4
+      ],
+      "printed_pages": [
+        50,
+        51
+      ],
+      "aliases": [
+        "distance",
+        "displacement"
+      ],
+      "source_facts": [
+        "Distance travelled measures total path length. Displacement is the net change in position and requires magnitude and direction. Both use metres in SI.",
+        "For a return to the starting position displacement is zero although distance travelled can be positive."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-speed",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Average speed",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf",
+      "source_sha256": "9a9299f272e2e760b7b58e4ecbf697fd65e51ab0fe181d55c0aff8ce4d19e8a4",
+      "chapter_number": 4,
+      "pdf_pages": [
+        5,
+        6
+      ],
+      "printed_pages": [
+        52,
+        53
+      ],
+      "aliases": [
+        "speed",
+        "speeds"
+      ],
+      "source_facts": [
+        "Average speed = total distance travelled / total elapsed time. Its SI unit is m/s. Speed has magnitude but no direction."
+      ],
+      "teaching_derivations": [
+        "From the formula: (v1*t1 + v2*t2)/(t1+t2). For equal time intervals this becomes (v1+v2)/2; the arithmetic mean is not generally correct for unequal durations.",
+        "A worked teaching example, not a textbook quotation: 150 m / 30 s = 5 m/s."
+      ],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-velocity",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Average velocity",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf",
+      "source_sha256": "9a9299f272e2e760b7b58e4ecbf697fd65e51ab0fe181d55c0aff8ce4d19e8a4",
+      "chapter_number": 4,
+      "pdf_pages": [
+        6,
+        7
+      ],
+      "printed_pages": [
+        53,
+        54
+      ],
+      "aliases": [
+        "velocity"
+      ],
+      "source_facts": [
+        "Average velocity = displacement / elapsed time, including direction. Its SI unit is m/s.",
+        "Average speed and the magnitude of average velocity can differ when motion changes direction."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-membrane",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Cell membrane",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf",
+      "source_sha256": "f50bf0b4d8a7fb0c7b9adffd335acd0d29d807336c0e011cce0ce898aac22a5c",
+      "chapter_number": 2,
+      "pdf_pages": [
+        4,
+        5
+      ],
+      "printed_pages": [
+        11,
+        12
+      ],
+      "aliases": [
+        "cell membrane",
+        "plasma membrane",
+        "selectively permeable"
+      ],
+      "source_facts": [
+        "The cell membrane selectively permits substances to pass and controls movement into and out of a cell.",
+        "The membrane consists of a lipid bilayer with proteins. It is about 7–10 nm thick."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-mixtures",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Homogeneous mixtures",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf",
+      "source_sha256": "aad4f4a0a9bcfd429f95454daebaba1ecd10c3e73ce2595250120af60b74b396",
+      "chapter_number": 5,
+      "pdf_pages": [
+        2,
+        3
+      ],
+      "printed_pages": [
+        73,
+        74
+      ],
+      "aliases": [
+        "homogeneous",
+        "uniform mixture"
+      ],
+      "source_facts": [
+        "A homogeneous mixture has uniform composition throughout. Solutions are homogeneous mixtures.",
+        "The source gives well-mixed sugar dissolved in water and vinegar as examples. Sand and water form a heterogeneous mixture."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-water",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Water composition",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf",
+      "source_sha256": "d588c71178ea87439e9bce3234dadde876c9b54b71587cf4b1b367860c289d57",
+      "chapter_number": 9,
+      "pdf_pages": [
+        10
+      ],
+      "printed_pages": [
+        171
+      ],
+      "aliases": [
+        "water molecule",
+        "water formula",
+        "formula of water",
+        "formula for water",
+        "H₂O",
+        "H2O"
+      ],
+      "source_facts": [
+        "A water molecule has two hydrogen atoms and one oxygen atom. Its chemical formula is H₂O."
+      ],
+      "teaching_derivations": [
+        "H₂O₂ has a different atom count; do not use it as the formula for water.",
+        "An atom-composition sketch is not a balanced chemical reaction equation. Label it as composition."
+      ],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-sodium",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Sodium ion formation",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf",
+      "source_sha256": "d588c71178ea87439e9bce3234dadde876c9b54b71587cf4b1b367860c289d57",
+      "chapter_number": 9,
+      "pdf_pages": [
+        11
+      ],
+      "printed_pages": [
+        172
+      ],
+      "aliases": [
+        "sodium",
+        "Na+",
+        "Na⁺"
+      ],
+      "source_facts": [
+        "A neutral sodium atom loses one valence electron to form Na⁺, a positively charged sodium ion.",
+        "The sodium ion has 11 protons and 10 electrons."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    },
+    {
+      "id": "cbse9-atoms",
+      "board": "cbse",
+      "grade_level": 9,
+      "subject": "Science",
+      "edition": "2026",
+      "academic_year": null,
+      "term": null,
+      "book_code": "iesc1",
+      "section_name": "Atomic Foundations of Matter",
+      "source_title": "NCERT Exploration Grade 9 — First edition April 2026",
+      "source_url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf",
+      "source_sha256": "d588c71178ea87439e9bce3234dadde876c9b54b71587cf4b1b367860c289d57",
+      "chapter_number": 9,
+      "pdf_pages": [
+        1
+      ],
+      "printed_pages": [],
+      "aliases": [
+        "atoms",
+        "atomic foundations",
+        "atom bonding"
+      ],
+      "source_facts": [
+        "Atomic Foundations of Matter is chapter 9 in Exploration, Grade 9, first edition April 2026."
+      ],
+      "teaching_derivations": [],
+      "verification_status": "source_checked",
+      "review_basis": "Agent visual comparison of the listed official PDF pages, 2026-10-13. Facts are paraphrases, not verbatim excerpts. Independent educator review pending.",
+      "content_version": "pilot-teaching-2026-10-13-v1",
+      "medium": "English"
+    }
+  ]
+}

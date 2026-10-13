@@ -17,7 +17,7 @@ _LOCK = threading.Lock()
 CACHE_SECONDS = 900
 MAX_CACHED_BOOKS = 8
 GRAMMAR_ROOTS = ('பெயரெச்ச', 'வினையெச்ச', 'எழுவாய்', 'விளி',
-                 'தொகாநிலை', 'தொகைநிலை', 'வேற்றுமை', 'வினைத்தொகை')
+                 'தொகாநிலை', 'தொகைநிலை', 'வேற்றுமை', 'வினைத்தொகை', 'உயிரெழுத்து', 'குறில்', 'நெடில்')
 
 _IGNORE = set('பத்தாம் பதினொன்றாம் பன்னிரண்டாம் ஆறாம் ஏழாம் எட்டாம் ஒன்பதாம் '
               'வகுப்பு வகுப்பில் சிறப்புத் தமிழ் தமிழில் பாடநூலில் பாடநூல் உள்ள '
@@ -74,7 +74,7 @@ def grammar_query(question):
     # Classify the requested task, not words inside the student's examples.
     outside = re.sub(r'[“"‘\x27][^”"’\x27]+[”"’\x27]', ' ', question)
     return bool(re.search(r'இலக்கண|பெயரெச்ச|வினையெச்ச|எழுவாய்|விளித்தொடர்|'
-                          r'தொகாநிலை|தொகைநிலை|வேற்றுமை|வினைத்தொகை|grammar', outside, re.I))
+                          r'தொகாநிலை|தொகைநிலை|வேற்றுமை|வினைத்தொகை|உயிர்?\s*எழுத்து|குறில்|நெடில்|grammar', outside, re.I))
 
 
 def named_work_query(question):
@@ -104,6 +104,16 @@ class TamilBookIndex:
 
     def search(self, question, count=6):
         terms = tamil_terms(question)
+        query_key = compact(question)
+        # Establish exact section identity before ranking body terms. A common
+        # word in a crossword is not evidence for a named poem's author.
+        exact_sections = {row.get('section_name') for row, *_ in self.rows
+                          if len(compact(row.get('section_name', ''))) >= 6
+                          and (compact(row.get('section_name', '')) in query_key or
+                               any(len(t) >= 7 and compact(t) in query_key
+                                   for t in tokens(row.get('section_name', ''))))
+                          and not row.get('section_name', '').startswith('General')}
+        author_query = bool(re.search(r'எழுதிய|இயற்றிய|ஆசிரியர்|author|poet', question, re.I))
         grammar = grammar_query(question)
         grammar_terms = set(terms) & set(GRAMMAR_ROOTS) if grammar else set()
         phrases = [compact(p) for p in re.findall(r'[“"‘\x27]([^”"’\x27]+)[”"’\x27]', question)
@@ -118,10 +128,12 @@ class TamilBookIndex:
             return []
         ranked = []
         for i, (row, body, title, compact_body, compact_title) in enumerate(self.rows):
+            if exact_sections and row.get('section_name') not in exact_sections:
+                continue
             matched = set(t for t in terms if t in body or t in title)
             if grammar_terms and not grammar_terms.intersection(matched):
                 continue
-            if not matched and not phrase_matches[i]:
+            if not matched and not phrase_matches[i] and not exact_sections:
                 continue
             score = sum(math.log(1 + len(self.rows) / (1 + self.frequency[t])) *
                         (min(body[t], 2) + 0.5 * (t in title)) for t in matched)
@@ -130,6 +142,10 @@ class TamilBookIndex:
                     continue
                 score += 60 if any(p in compact_body for p in phrases) else 30
             text = normalized(row['content'])
+            if exact_sections:
+                score += 25
+                if author_query and re.search(r'நூல் வெளி|இயற்பெயர்|பாரதிதாசன்|ஆசிரியர்|இயற்றிய', text):
+                    score += 45
             if grammar_terms:
                 # Prefer the definition of the requested category over a subtype
                 # or a paragraph that merely mentions that category.
@@ -141,7 +157,7 @@ class TamilBookIndex:
             if any(w in text for w in ('ஆகும்', 'எனப்படும்', 'என்பது')):
                 score += 5
             if any(w in text for w in ('தேர்ந்தெடுக்க', 'DASH', 'டேஷ்', 'பொருத்துக',
-                                      'யாவை', 'யாது', 'எழுதுக')):
+                                      'யாவை', 'யாது', 'எழுதுக', 'குறுக்கெழுத்து')):
                 score *= 0.2
             if score >= 3:
                 ranked.append((score, matched, row))

@@ -1,0 +1,21 @@
+{
+  "version": "primary-reference-facts-2026-10-12-v1",
+  "records": [
+    {
+      "pattern": "(?:what is (?:the )?|give (?:the )?)?(?:chemical |molecular )?formula (?:of|for) water[?.! ]*|water (?:chemical )?formula[?.! ]*|(?:நீரின்|தண்ணீரின்) (?:வேதியியல் )?(?:வாய்ப்பாடு|சூத்திரம்)(?: என்ன)?[?.! ]*",
+      "answer_en": "Water's chemical formula is **H₂O**: each molecule has two hydrogen atoms and one oxygen atom.",
+      "answer_ta": "நீரின் வேதியியல் வாய்ப்பாடு **H₂O**. ஒரு நீர் மூலக்கூறில் இரண்டு ஹைட்ரஜன் அணுக்களும் ஒரு ஆக்சிஜன் அணுவும் உள்ளன.",
+      "source": "https://webbook.nist.gov/cgi/cbook.cgi?Name=H2O&cMS=on",
+      "source_title": "NIST Chemistry WebBook: Water",
+      "status": "verified"
+    },
+    {
+      "pattern": "(?:what is (?:the )?)?capital (?:city )?of tamil nadu[?.! ]*|தமிழ்நாட்டின் தலைநகரம்(?: என்ன)?[?.! ]*",
+      "answer_en": "**Chennai** is the capital of Tamil Nadu.",
+      "answer_ta": "தமிழ்நாட்டின் தலைநகரம் **சென்னை**.",
+      "source": "https://chennai.nic.in/about-district/",
+      "source_title": "Chennai District Administration",
+      "status": "verified"
+    }
+  ]
+}

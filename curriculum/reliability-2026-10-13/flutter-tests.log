@@ -1,0 +1,47 @@
+
+┌─────────────────────────────────────────────────────────┐
+│ A new version of Flutter is available!                  │
+│                                                         │
+│ To update to the latest version, run "flutter upgrade". │
+└─────────────────────────────────────────────────────────┘
+00:00 +0: loading C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart
+00:00 +0: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:00 +1: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:01 +2: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:01 +3: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:01 +4: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:01 +5: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:02 +6: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/answer_library_screen_test.dart: review requires checks and sends edited answer with original revision
+00:02 +7: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/cbse_curriculum_test.dart: CBSE Class 9 presents NCERT subjects only
+00:02 +8: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/cbse_curriculum_test.dart: CBSE Class 9 presents NCERT subjects only
+00:02 +9: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/cbse_curriculum_test.dart: CBSE Class 9 presents NCERT subjects only
+00:02 +10: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/cbse_curriculum_test.dart: CBSE Class 9 presents NCERT subjects only
+00:02 +11: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/cbse_curriculum_test.dart: CBSE Class 9 presents NCERT subjects only
+00:03 +12: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: Tuition uses saved board and waits for class
+00:03 +13: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: Tuition uses saved board and waits for class
+00:03 +14: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: Tuition uses saved board and waits for class
+00:03 +15: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: Tuition uses saved board and waits for class
+00:03 +16: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +17: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +18: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +19: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +20: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +21: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +22: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/class_and_voice_test.dart: voice review defaults Tamil and returns text only on confirmation
+00:04 +23: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/student_tutorial_test.dart: completion is remembered separately per account
+00:04 +24: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/student_tutorial_test.dart: tour navigates, completes, and replays at phone width
+00:05 +25: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/student_tutorial_test.dart: tour navigates, completes, and replays at phone width
+00:06 +26: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +27: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +28: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +29: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +30: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +31: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +32: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:06 +33: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:07 +34: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:07 +35: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/tamil_keyboard_test.dart: Tamil word can be typed on a small phone and retained on Done
+00:08 +36: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/widget_test.dart: New middle grades send their own grade and subject
+00:08 +37: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/widget_test.dart: Class 11 uses its verified catalogue, not Class 12 subjects
+00:08 +38: C:/Users/dines/AuxiumSoft/Tutor Preethi/akka_tutor/test/widget_test.dart: All seven grade choices fit a phone width
+00:08 +39: All tests passed!

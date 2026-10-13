@@ -310,3 +310,20 @@ exclude credits deducted from top-ups, avoiding double deduction. Paid monthly
 blocking remains pending. Packs valid at answer admission may finish being used
 during that answer even if their expiry passes; they cannot start a new answer
 after expiry. Never call the grant RPC on a client or before payment validation.
+
+### Current plan revision — 13 October 2026
+
+This supersedes the older pricing/expiry examples above. Standard (legacy ID
+`tier_199`) is ₹349 for 3M learning credits; Syllabus Master (`tier_499`) is ₹499
+for 5M. Both subscriptions retain 30-day start/end dates. Usage accounting follows
+those stored dates rather than resetting on the first of a calendar month; legacy
+profiles without dates retain the calendar fallback. Premium is unchanged.
+
+New ₹49 top-ups grant 300,000 credits. If the purchaser has an active monthly
+subscription, the pack expires at that subscription's current expiry timestamp.
+Otherwise it expires 10 days after grant. Expired subscriptions do not qualify
+for aligned expiry. Renewal later does not extend an already granted pack;
+repeat payment verification preserves the original quantity and end date.
+The migration preserves earlier grants and their original expiry dates. Credit
+quantities remain hidden from the upgrade page. Purchases and deployment remain
+pending; paid monthly blocking is still a separate outstanding task.

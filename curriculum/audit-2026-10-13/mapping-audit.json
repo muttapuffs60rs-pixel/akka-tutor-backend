@@ -1,0 +1,116 @@
+{
+  "expected_chapter_files": 933,
+  "represented_chapter_files": 933,
+  "missing_chapter_files": [],
+  "unexpected_chapter_files": [],
+  "import_count_discrepancies": {},
+  "mapping_defects": {},
+  "example_ids": {},
+  "science_page_checks": [
+    {
+      "source_file": "iesc101.pdf",
+      "pdf_pages": 7,
+      "eligible_extracted_pages": 7,
+      "represented_pages": 7,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc102.pdf",
+      "pdf_pages": 20,
+      "eligible_extracted_pages": 20,
+      "represented_pages": 20,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc103.pdf",
+      "pdf_pages": 20,
+      "eligible_extracted_pages": 20,
+      "represented_pages": 20,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc104.pdf",
+      "pdf_pages": 24,
+      "eligible_extracted_pages": 24,
+      "represented_pages": 24,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc105.pdf",
+      "pdf_pages": 22,
+      "eligible_extracted_pages": 22,
+      "represented_pages": 22,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc106.pdf",
+      "pdf_pages": 22,
+      "eligible_extracted_pages": 22,
+      "represented_pages": 22,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc107.pdf",
+      "pdf_pages": 24,
+      "eligible_extracted_pages": 24,
+      "represented_pages": 24,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc108.pdf",
+      "pdf_pages": 22,
+      "eligible_extracted_pages": 22,
+      "represented_pages": 22,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc109.pdf",
+      "pdf_pages": 22,
+      "eligible_extracted_pages": 22,
+      "represented_pages": 22,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc110.pdf",
+      "pdf_pages": 24,
+      "eligible_extracted_pages": 24,
+      "represented_pages": 24,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc111.pdf",
+      "pdf_pages": 20,
+      "eligible_extracted_pages": 20,
+      "represented_pages": 20,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc112.pdf",
+      "pdf_pages": 24,
+      "eligible_extracted_pages": 24,
+      "represented_pages": 24,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    },
+    {
+      "source_file": "iesc113.pdf",
+      "pdf_pages": 21,
+      "eligible_extracted_pages": 20,
+      "represented_pages": 20,
+      "missing_eligible_pages": [],
+      "out_of_range_pages": []
+    }
+  ],
+  "scope": "Mapping consistency with preserved manifest/import receipts only; not independent complete official syllabus or semantic proof."
+}

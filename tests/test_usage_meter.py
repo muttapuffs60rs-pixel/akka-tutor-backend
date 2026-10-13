@@ -5,6 +5,15 @@ from usage_meter import usage_summary, monthly_window, fetch_usage
 
 
 class UsageMeterTests(unittest.TestCase):
+    def test_paid_usage_follows_subscription_dates_not_calendar_month(self):
+        profile = {'subscription_tier': 'tier_199',
+                   'subscription_start_date': '2026-10-13T12:00:00+05:30',
+                   'subscription_expires_at': '2026-11-12T12:00:00+05:30'}
+        result = usage_summary(profile, [], datetime(2026, 11, 2, tzinfo=timezone.utc))
+        self.assertEqual(result['period_start'], profile['subscription_start_date'])
+        self.assertEqual(result['period_end'], profile['subscription_expires_at'])
+        self.assertEqual(result['monthly_token_target'], 3000000)
+
     def test_paid_saved_answer_deducts_credits_without_inventing_api_tokens(self):
         rows = [{'status': 'cached', 'input_tokens': 0, 'output_tokens': 0,
                  'learning_credits_charged': 3000},
@@ -37,7 +46,7 @@ class UsageMeterTests(unittest.TestCase):
                                datetime.now(timezone.utc))
         self.assertEqual(result['monthly_tokens_used'], 1100)
         self.assertEqual(result['unmetered_requests'], 1)
-        self.assertEqual(result['monthly_token_target'], 3000000)
+        self.assertEqual(result['monthly_token_target'], 5000000)
         self.assertFalse(result['monthly_limit_enforced'])
         self.assertEqual(result['daily_remaining'], 146)
 
@@ -45,7 +54,7 @@ class UsageMeterTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         self.assertEqual(usage_summary({'chats_today': 8}, [], now)['daily_remaining'], 0)
         self.assertIsNone(usage_summary({'subscription_tier': 'admin'}, [], now)['daily_limit'])
-        self.assertEqual(usage_summary({'subscription_tier': 'tier_199'}, [], now)['monthly_token_target'], 1250000)
+        self.assertEqual(usage_summary({'subscription_tier': 'tier_199'}, [], now)['monthly_token_target'], 3000000)
         self.assertEqual(usage_summary({'subscription_tier': 'tier_999'}, [], now)['token_target'], 8000000)
         self.assertEqual(usage_summary({}, [], now)['token_target'], 50000)
         self.assertEqual(usage_summary({}, [], now)['token_period'], 'lifetime')

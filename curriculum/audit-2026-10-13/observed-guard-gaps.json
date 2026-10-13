@@ -1,0 +1,6 @@
+{
+  "mode": "Offline replay of actual guard; no additional provider call",
+  "wrong_grammar_without_quotes_accepted": true,
+  "correct_numerical_with_quotes_accepted": false,
+  "same_numerical_without_quotes_accepted": true
+}

@@ -21,11 +21,11 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         self.gateway.payment.fetch.return_value = {'amount': 4900, 'currency': 'INR',
             'order_id': 'order_test', 'status': 'captured'}
         self.db = Mock()
-        self.db.rpc.return_value.execute.return_value.data = {'credits': 200000}
+        self.db.rpc.return_value.execute.return_value.data = {'credits': 300000}
         env = dict(globals(), razorpay_client=self.gateway, supabase=self.db,
             razorpay=SimpleNamespace(errors=SimpleNamespace(SignatureVerificationError=type('BadSignature',(Exception,),{}))),
             VerifyPaymentRequest=object, OrderRequest=object, get_current_user=lambda: None,
-            TOPUP_PACKS={'topup_49': {'amount':49,'days':30,'credits':200000}}, TIER_PRICES={})
+            TOPUP_PACKS={'topup_49': {'amount':49,'days':10,'credits':300000}}, TIER_PRICES={})
         exec(compile(ast.Module(body=nodes,type_ignores=[]),'main.py','exec'),env)
         self.verify = env['verify_payment']
         self.create = env['create_order']
@@ -33,7 +33,7 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_captured_payment_grants_pack_without_changing_subscription(self):
         result = await self.verify(self.request,'student')
-        self.assertEqual(result['topup']['credits'],200000)
+        self.assertEqual(result['topup']['credits'],300000)
         self.db.table.assert_not_called()
         self.db.rpc.assert_called_once_with('grant_learning_credit_topup', {
             'target_user_id':'student','payment_id_value':'pay_test','order_id_value':'order_test'})

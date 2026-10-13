@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-12T06:59:51.404352+00:00",
+  "read_only": true,
+  "boards": {
+    "tn": {
+      "content_range": "0-0/132641",
+      "sample_characters": 412,
+      "sample_subject": "Statistics",
+      "sample_grade": 12
+    },
+    "cbse": {
+      "content_range": "0-0/95670",
+      "sample_characters": 779,
+      "sample_subject": "Home Science",
+      "sample_grade": 11
+    }
+  },
+  "review_metadata_http_status": 400,
+  "review_metadata_available": false,
+  "review_metadata_error_code": "42703"
+}

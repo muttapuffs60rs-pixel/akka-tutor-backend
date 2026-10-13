@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-13",
+  "paid_test_status": "awaiting explicit approval; no paid calls authorized by this plan",
+  "limits": {"max_provider_calls": 20, "max_input_utf8_bytes_per_call": 30000, "max_output_tokens_per_call": 1800, "budget_usd": 0.25, "automatic_retries": 0},
+  "pricing": {"source": "https://api-docs.deepseek.com/quick_start/pricing/", "peak_input_usd_per_million": 0.30, "peak_output_usd_per_million": 1.20, "conservative_max_usd": 0.2232},
+  "method": "Read-only live retrieval plus local perform_chat with isolated auth/billing/session adapters. Paid generation only after approval. Synthetic questions; no student data. Expected passages require source identity and visual checks; topic hits alone are not educational accuracy.",
+  "cases": [
+    {"id":"ta01","board":"tn","grade":6,"subject":"Tamil","kind":"textbook_reference","question":"textbook kural 7","expected":"official 2024 Term I printed p49 / PDF p57, canonical 72","pdf_pages":[57]},
+    {"id":"ta02","board":"tn","grade":6,"subject":"Tamil","kind":"follow_up","question":"பொருள்","previous":"textbook kural 7","expected":"same verified selection 7 meaning","pdf_pages":[57]},
+    {"id":"ta03","board":"tn","grade":6,"subject":"Tamil","kind":"ambiguous","question":"7","expected":"clarify reference; no invented passage"},
+    {"id":"ta04","board":"tn","grade":6,"subject":"Tamil","kind":"poetry","question":"இன்பத்தமிழ் பாடலை எழுதியவர் யார்?","expected":"Bharathidasan; Term I printed p2 / PDF p10","pdf_pages":[10,11]},
+    {"id":"ta05","board":"tn","grade":6,"subject":"Tamil","kind":"poetry_explanation","question":"இன்பத்தமிழ் பாடலில் தமிழ் உயிருக்கு இணையாகக் கூறப்படுவது ஏன்?","expected":"Term I poem and source explanation; avoid invented interpretation","pdf_pages":[10,11]},
+    {"id":"ta06","board":"tn","grade":6,"subject":"Tamil","kind":"prose","question":"வளர்தமிழ் பாடத்தில் தமிழ் காலத்திற்கு ஏற்ப எவ்வாறு வளர்கிறது?","expected":"Term I Valartamil prose","pdf_pages":[16,17,18,19,20]},
+    {"id":"ta07","board":"tn","grade":6,"subject":"Tamil","kind":"grammar","question":"உயிர் எழுத்துகள் எத்தனை?","expected":"12; official grammar section must be visually checked","pdf_pages":[26,27]},
+    {"id":"ta08","board":"tn","grade":6,"subject":"Tamil","kind":"grammar_follow_up","question":"அவற்றுக்கு எடுத்துக்காட்டு கொடு","previous":"உயிர் எழுத்துகள் எத்தனை?","expected":"retain vowel topic; do not switch to unrelated grammar","pdf_pages":[26,27]},
+    {"id":"ta09","board":"tn","grade":6,"subject":"Tamil","kind":"absent_work","question":"“விண்வெளி மிட்டாய் மழை” என்ற பாடலை விளக்குக","expected":"do not invent or falsely source nonexistent named work"},
+    {"id":"ta10","board":"tn","grade":6,"subject":"Tamil","kind":"edition_conflict","question":"2026-27 textbook kural 7","expected":"no substitution of verified 2024 edition"},
+    {"id":"sc01","board":"cbse","grade":9,"subject":"Science","kind":"physics_definition","question":"What is displacement and how is it different from distance?","expected":"Exploration chapter 4 PDF p3-4","chapter":4,"pdf_pages":[3,4]},
+    {"id":"sc02","board":"cbse","grade":9,"subject":"Science","kind":"physics_formula","question":"How do I calculate average speed?","expected":"total distance divided by elapsed time; chapter 4 PDF p5","chapter":4,"pdf_pages":[5,6]},
+    {"id":"sc03","board":"cbse","grade":9,"subject":"Science","kind":"numerical","question":"A cyclist travels 150 m in 30 s. What is the average speed? Show the units.","expected":"5 m/s using average-speed equation","chapter":4,"pdf_pages":[5,6]},
+    {"id":"sc04","board":"cbse","grade":9,"subject":"Science","kind":"follow_up","question":"Why is that different from average velocity?","previous":"How do I calculate average speed?","expected":"retain average speed topic; velocity uses displacement/time","chapter":4,"pdf_pages":[5,6,7]},
+    {"id":"sc05","board":"cbse","grade":9,"subject":"Science","kind":"biology","question":"What does the cell membrane do?","expected":"Exploration chapter 2; selective passage of substances","chapter":2},
+    {"id":"sc06","board":"cbse","grade":9,"subject":"Science","kind":"mixture_definition","question":"What is a homogeneous mixture? Give a textbook example.","expected":"uniform composition; appropriate source example from chapter 5","chapter":5,"pdf_pages":[2,3,4]},
+    {"id":"sc07","board":"cbse","grade":9,"subject":"Science","kind":"chemical_formula","question":"What is the chemical formula of water? What does the 2 mean?","expected":"H2O, two hydrogen atoms per oxygen; chapter 9","chapter":9,"pdf_pages":[10,11]},
+    {"id":"sc08","board":"cbse","grade":9,"subject":"Science","kind":"ionic_bond","question":"How does sodium form a positive ion in sodium chloride?","expected":"sodium loses one electron; chapter 9 PDF p11","chapter":9,"pdf_pages":[11,12]},
+    {"id":"sc09","board":"cbse","grade":9,"subject":"Science","kind":"wrong_chapter","question":"Explain atoms from chapter 1 of my Science textbook.","expected":"do not confirm incorrect chapter mapping; Exploration chapter 1 is introduction"},
+    {"id":"sc10","board":"cbse","grade":9,"subject":"Science","kind":"ambiguous","question":"Explain question 7","expected":"ask for chapter/exercise/page; do not guess"}
+  ]
+}

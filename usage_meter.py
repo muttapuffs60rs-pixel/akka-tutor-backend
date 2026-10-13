@@ -2,8 +2,8 @@
 from datetime import datetime, timedelta, timezone
 
 IST = timezone(timedelta(hours=5, minutes=30))
-# tier_199 is the legacy identifier for the Standard plan, now priced at ₹249.
-MONTHLY_TARGETS = {'tier_199': 1_250_000, 'tier_499': 3_000_000, 'tier_999': 8_000_000}
+# tier_199 is the legacy identifier for the Standard plan, now priced at ₹349.
+MONTHLY_TARGETS = {'tier_199': 3_000_000, 'tier_499': 5_000_000, 'tier_999': 8_000_000}
 DAILY_LIMITS = {'tier_199': 50, 'tier_499': 150, 'tier_999': 150}
 
 
@@ -13,8 +13,17 @@ def monthly_window(now):
     return start, end
 
 
+def subscription_window(profile, now):
+    if profile.get('subscription_start_date') and profile.get('subscription_expires_at'):
+        start = datetime.fromisoformat(profile['subscription_start_date'].replace('Z', '+00:00'))
+        end = datetime.fromisoformat(profile['subscription_expires_at'].replace('Z', '+00:00'))
+        if start.tzinfo is not None and end.tzinfo is not None and end > start:
+            return start, end
+    return monthly_window(now)  # Legacy profiles without subscription dates.
+
+
 def usage_summary(profile, rows, now):
-    start, end = monthly_window(now)
+    start, end = subscription_window(profile, now)
     tier = profile.get('subscription_tier') or 'free'
     daily_limit = None if tier in ('admin', 'tier_49_daily') else DAILY_LIMITS.get(tier, 5)
     fields = ('input_tokens', 'output_tokens', 'vision_input_tokens', 'vision_output_tokens')
@@ -39,7 +48,7 @@ def usage_summary(profile, rows, now):
 
 def fetch_usage(client, profile, user_id, now=None):
     now = now or datetime.now(timezone.utc)
-    start, end = monthly_window(now)
+    start, end = subscription_window(profile, now)
     rows = []
     # PostgREST caps individual responses; paginate so heavy users aren't undercounted.
     for offset in range(0, 1_000_000, 1000):

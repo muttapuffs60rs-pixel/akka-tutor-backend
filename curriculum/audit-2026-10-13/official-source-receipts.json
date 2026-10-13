@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://ncert.nic.in/textbook/pdf/iesc1ps.pdf",
+    "sha256": "6dfb484cc05eeea3886bd4db603b81e19c6b5e146d4a77a9a60a55cf12b2cdee",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf",
+    "sha256": "f50bf0b4d8a7fb0c7b9adffd335acd0d29d807336c0e011cce0ce898aac22a5c",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf",
+    "sha256": "9a9299f272e2e760b7b58e4ecbf697fd65e51ab0fe181d55c0aff8ce4d19e8a4",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf",
+    "sha256": "aad4f4a0a9bcfd429f95454daebaba1ecd10c3e73ce2595250120af60b74b396",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf",
+    "sha256": "d588c71178ea87439e9bce3234dadde876c9b54b71587cf4b1b367860c289d57",
+    "status": "downloaded"
+  }
+]
