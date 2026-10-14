@@ -27,6 +27,7 @@ import httpx
 from database_reliability import database_options, retry_database
 from chat_queue import ChatQueue, run_queued
 from usage_meter import fetch_usage
+from launch_access import require_launch_access
 
 # ==========================================
 # 1. SETUP
@@ -133,6 +134,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
         user_resp = retry_database(lambda: supabase.auth.get_user(token))
         if not user_resp or not user_resp.user:
             raise HTTPException(status_code=401, detail="Invalid token")
+        require_launch_access(supabase, user_resp.user.id)
         return user_resp.user.id
     except httpx.TransportError:
         raise HTTPException(503, 'Sign-in service temporarily unavailable. Please retry.', headers={'Retry-After':'3'})
