@@ -671,6 +671,10 @@ async def create_order(req: OrderRequest, user_id: str = Depends(get_current_use
         raise HTTPException(503, "Top-up payments are not available yet.")
     if not razorpay_client:
         raise HTTPException(status_code=500, detail="Razorpay not configured")
+    key_id = os.getenv("RAZORPAY_KEY_ID", "")
+    # Keep the integration in the sandbox until live charging is explicitly enabled.
+    if not key_id.startswith("rzp_test_"):
+        raise HTTPException(503, "Checkout is available in Razorpay Test Mode only. Live payments are not enabled.")
     try:
         tier_info = TIER_PRICES.get(req.tier_id)
         if not tier_info:
@@ -682,9 +686,11 @@ async def create_order(req: OrderRequest, user_id: str = Depends(get_current_use
         notes = {'tier_id': req.tier_id, 'user_id': user_id}
         
         response = razorpay_client.order.create(dict(amount=order_amount, currency=order_currency, receipt=order_receipt, notes=notes))
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {**response, 'key_id': os.getenv('RAZORPAY_KEY_ID')}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail='Payment provider is unavailable. Please try again later.')
 
 @app.post("/verify-payment")
 async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(get_current_user)):
@@ -729,6 +735,14 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         tier_info = TIER_PRICES.get(tier_id)
         if not tier_info:
             raise HTTPException(status_code=400, detail="Invalid tier in order notes")
+            
+        payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
+        expected_amount = tier_info['amount'] * 100
+        if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
+                or payment.get('order_id') != req.razorpay_order_id
+                or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
+                or payment.get('status') != 'captured'):
+            raise HTTPException(400, 'Payment is not captured or does not match the plan')
             
         # Payment is verified, update the user's subscription
         from datetime import datetime, timedelta, timezone
@@ -775,9 +789,8 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         raise HTTPException(status_code=400, detail="Invalid Payment Signature")
     except HTTPException:
         raise
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=502, detail='Payment verification is temporarily unavailable. Do not pay again; contact support.')
 
 # ==========================================
 # 7. LIVE QUIZ

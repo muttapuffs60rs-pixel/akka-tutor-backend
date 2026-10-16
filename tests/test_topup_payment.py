@@ -1,4 +1,5 @@
 import ast
+import os
 import asyncio
 import traceback
 import unittest
@@ -11,6 +12,10 @@ from database_reliability import retry_database
 
 class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        from unittest.mock import patch
+        env_patch = patch.dict(os.environ, {'RAZORPAY_KEY_ID': 'rzp_test_synthetic'})
+        env_patch.start()
+        self.addCleanup(env_patch.stop)
         nodes = [n for n in ast.parse((Path(__file__).parents[1]/'main.py').read_text(encoding='utf-8')).body
                  if getattr(n, 'name', '') in ('verify_payment', 'create_order')]
         for n in nodes:
@@ -25,7 +30,7 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         env = dict(globals(), razorpay_client=self.gateway, supabase=self.db,
             razorpay=SimpleNamespace(errors=SimpleNamespace(SignatureVerificationError=type('BadSignature',(Exception,),{}))),
             VerifyPaymentRequest=object, OrderRequest=object, get_current_user=lambda: None,
-            TOPUP_PACKS={'topup_49': {'amount':49,'days':30,'credits':200000}}, TIER_PRICES={})
+            TOPUP_PACKS={'topup_49': {'amount':49,'days':30,'credits':200000}}, TIER_PRICES={'tier_999': {'amount':999,'days':30}})
         exec(compile(ast.Module(body=nodes,type_ignores=[]),'main.py','exec'),env)
         self.verify = env['verify_payment']
         self.create = env['create_order']
@@ -56,4 +61,79 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(HTTPException) as error:
             await self.create(SimpleNamespace(tier_id='topup_49'),'student')
         self.assertEqual(error.exception.status_code,503)
+        self.gateway.order.create.assert_not_called()
+
+    async def test_orders_use_server_prices_and_public_key(self):
+        self.gateway.order.create.return_value = {'id':'order_test', 'amount':4900, 'currency':'INR'}
+        from unittest.mock import patch
+        with patch.dict(os.environ, {'RAZORPAY_KEY_ID':'rzp_test_public'}):
+            for tier, price in [('tier_999',99900)]:
+                result = await self.create(SimpleNamespace(tier_id=tier),'student')
+                sent = self.gateway.order.create.call_args.args[0]
+                self.assertEqual(sent['amount'],price)
+                self.assertEqual(sent['notes'],{'tier_id':tier,'user_id':'student'})
+                self.assertEqual(result['key_id'],'rzp_test_public')
+
+    async def test_invalid_plan_is_400(self):
+        with self.assertRaises(HTTPException) as error:
+            await self.create(SimpleNamespace(tier_id='invalid'),'student')
+        self.assertEqual(error.exception.status_code,400)
+        self.gateway.order.create.assert_not_called()
+
+    async def test_premium_requires_captured_correct_payment(self):
+        self.gateway.order.fetch.return_value = {'amount':99900,'currency':'INR',
+            'notes':{'tier_id':'tier_999','user_id':'student'}}
+        valid = {'amount':99900,'currency':'INR','order_id':'order_test','status':'captured'}
+        for changes in ({'amount':1},{'status':'authorized'},{'currency':'USD'},{'order_id':'other'}):
+            self.gateway.payment.fetch.return_value = valid | changes
+            with self.assertRaises(HTTPException) as error:
+                await self.verify(self.request,'student')
+            self.assertEqual(error.exception.status_code,400)
+        self.db.table.assert_not_called()
+
+    async def test_premium_activates_for_30_days(self):
+        self.gateway.order.fetch.return_value = {'amount':99900,'currency':'INR',
+            'notes':{'tier_id':'tier_999','user_id':'student'}}
+        self.gateway.payment.fetch.return_value = {'amount':99900,'currency':'INR',
+            'order_id':'order_test','status':'captured'}
+        self.db.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
+            {'subscription_tier':'free','previous_tier':None}]
+        result = await self.verify(self.request,'student')
+        self.assertEqual(result['status'],'success')
+        values=self.db.table.return_value.update.call_args.args[0]
+        self.assertEqual(values['subscription_tier'],'tier_999')
+        from datetime import datetime, timedelta
+        self.assertEqual(datetime.fromisoformat(values['subscription_expires_at'])-
+            datetime.fromisoformat(values['subscription_start_date']),timedelta(days=30))
+        self.db.rpc.assert_not_called()
+
+    async def test_provider_errors_do_not_expose_private_details(self):
+        self.gateway.order.create.side_effect = RuntimeError('synthetic-private-provider-detail')
+        with self.assertRaises(HTTPException) as error:
+            await self.create(SimpleNamespace(tier_id='tier_999'), 'student')
+        self.assertEqual(error.exception.status_code, 502)
+        self.assertNotIn('synthetic-private', error.exception.detail)
+        self.gateway.order.fetch.side_effect = RuntimeError('synthetic-private-provider-detail')
+        with self.assertRaises(HTTPException) as error:
+            await self.verify(self.request, 'student')
+        self.assertEqual(error.exception.status_code, 502)
+        self.assertNotIn('synthetic-private', error.exception.detail)
+        self.db.table.assert_not_called()
+
+    async def test_invalid_signature_does_not_activate(self):
+        from unittest.mock import patch
+        bad_signature = self.verify.__globals__['razorpay'].errors.SignatureVerificationError
+        self.gateway.utility.verify_payment_signature.side_effect = bad_signature('synthetic-invalid')
+        with self.assertRaises(HTTPException) as error:
+            await self.verify(self.request, 'student')
+        self.assertEqual(error.exception.status_code, 400)
+        self.gateway.order.fetch.assert_not_called()
+        self.db.table.assert_not_called()
+
+    async def test_live_credentials_do_not_create_a_real_order(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {'RAZORPAY_KEY_ID': 'rzp_live_synthetic'}):
+            with self.assertRaises(HTTPException) as error:
+                await self.create(SimpleNamespace(tier_id='tier_999'), 'student')
+        self.assertEqual(error.exception.status_code, 503)
         self.gateway.order.create.assert_not_called()
