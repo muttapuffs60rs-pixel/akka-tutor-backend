@@ -62,11 +62,8 @@ ocr_reader = easyocr.Reader(['en'], gpu=False)
 
 try:
     razorpay_client = razorpay.Client(auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_KEY_SECRET")))
-    razorpay_client.session.verify = False
-    import urllib3
-    urllib3.disable_warnings()
 except Exception as e:
-    print(f"Failed to initialize Razorpay: {e}")
+    print("Razorpay configuration is unavailable.")
     razorpay_client = None
 
 app = FastAPI(title="Akka Tutor API")
@@ -665,6 +662,17 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
 # 6. PAYMENTS
 # ==========================================
 
+@app.get("/payments/status")
+async def payment_status():
+    # Readiness only: never publish keys, account details, or provider responses.
+    key_id = os.getenv("RAZORPAY_KEY_ID", "")
+    configured = bool(key_id and os.getenv("RAZORPAY_KEY_SECRET") and razorpay_client)
+    mode = "test" if key_id.startswith("rzp_test_") else "live" if key_id.startswith("rzp_live_") else "unconfigured"
+    return {"release": "sandbox-checkout-v1", "configured": configured,
+            "mode": mode, "checkout_enabled": configured and mode == "test",
+            "live_charging_enabled": False, "topups_enabled": False}
+
+
 @app.post("/create-order")
 async def create_order(req: OrderRequest, user_id: str = Depends(get_current_user)):
     if req.tier_id in TOPUP_PACKS:
@@ -743,7 +751,7 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
                 or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
                 or payment.get('status') != 'captured'):
             raise HTTPException(400, 'Payment is not captured or does not match the plan')
-            
+
         # Payment is verified, update the user's subscription
         from datetime import datetime, timedelta, timezone
         

@@ -17,7 +17,7 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         env_patch.start()
         self.addCleanup(env_patch.stop)
         nodes = [n for n in ast.parse((Path(__file__).parents[1]/'main.py').read_text(encoding='utf-8')).body
-                 if getattr(n, 'name', '') in ('verify_payment', 'create_order')]
+                 if getattr(n, 'name', '') in ('verify_payment', 'create_order', 'payment_status')]
         for n in nodes:
             n.decorator_list = []
         self.gateway = Mock()
@@ -34,6 +34,7 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         exec(compile(ast.Module(body=nodes,type_ignores=[]),'main.py','exec'),env)
         self.verify = env['verify_payment']
         self.create = env['create_order']
+        self.status = env['payment_status']
         self.request = SimpleNamespace(razorpay_order_id='order_test',razorpay_payment_id='pay_test',razorpay_signature='verified-by-mock')
 
     async def test_captured_payment_grants_pack_without_changing_subscription(self):
@@ -137,3 +138,14 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
                 await self.create(SimpleNamespace(tier_id='tier_999'), 'student')
         self.assertEqual(error.exception.status_code, 503)
         self.gateway.order.create.assert_not_called()
+
+    async def test_status_reports_mode_without_exposing_credentials(self):
+        from unittest.mock import patch
+        for prefix in ('rzp_test_', 'rzp_live_'):
+            with patch.dict(os.environ, {'RAZORPAY_KEY_ID': prefix + 'synthetic',
+                                        'RAZORPAY_KEY_SECRET': 'synthetic-private-value'}):
+                status = await self.status()
+            self.assertTrue(status['configured'])
+            self.assertEqual(status['checkout_enabled'], prefix == 'rzp_test_')
+            self.assertFalse(status['live_charging_enabled'])
+            self.assertNotIn('synthetic', str(status))
