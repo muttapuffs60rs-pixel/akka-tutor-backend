@@ -405,9 +405,11 @@ async def perform_chat(data: ChatRequest, user_id: str):
                                              'target_request_id': request_id}).execute().data)
         if not credit_admission or credit_admission.get('error'):
             code = (credit_admission or {}).get('error', 'credit_unavailable')
-            message = ('Your available learning credits are exhausted. Daily credits reset at midnight IST.'
+            message = ('Your subscription has expired. Your plan tokens are no longer available. Please subscribe to continue.'
+                       if code == 'subscription_expired' else
+                       'Your available learning credits are exhausted. Please subscribe to continue.'
                        if code == 'credit_limit' else 'Please wait for the current answer before asking another question.')
-            raise HTTPException(403 if code == 'credit_limit' else 409, message,
+            raise HTTPException(403 if code in ('credit_limit', 'subscription_expired') else 409, message,
                                 headers={'X-Chat-Error': code})
         cache_eligible = eligible_question(data.question, data.history, data.image_url, reservation["turns_used"])
         data.history = bounded_history(data.history)
