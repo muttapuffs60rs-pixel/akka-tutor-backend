@@ -97,6 +97,17 @@ DECLARE balance jsonb; w public.learning_credit_wallets%ROWTYPE; tier text; base
 BEGIN
     SELECT subscription_tier INTO tier FROM public.profiles WHERE id=target_user_id;
     IF NOT FOUND THEN RETURN jsonb_build_object('error','profile'); END IF;
+    -- A stale paid tier must never authorize answers after its expiry.
+    IF coalesce(tier,'free') <> 'free' AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id=target_user_id
+        AND subscription_expires_at <= now()
+    ) THEN
+        IF NOT EXISTS (SELECT 1 FROM public.learning_credit_topups
+            WHERE user_id=target_user_id AND expires_at>now() AND remaining>0) THEN
+            RETURN jsonb_build_object('error','subscription_expired');
+        END IF;
+        tier := 'free';
+    END IF;
     balance := public.learning_credit_balance(target_user_id);
     SELECT * INTO w FROM public.learning_credit_wallets WHERE user_id=target_user_id FOR UPDATE;
     IF NOT EXISTS (SELECT 1 FROM public.ai_chat_requests WHERE id=target_request_id AND user_id=target_user_id
