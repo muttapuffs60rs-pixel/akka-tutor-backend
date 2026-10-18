@@ -39,11 +39,11 @@ class UsageMeterTests(unittest.TestCase):
         self.assertEqual(result['unmetered_requests'], 1)
         self.assertEqual(result['monthly_token_target'], 3000000)
         self.assertFalse(result['monthly_limit_enforced'])
-        self.assertEqual(result['daily_remaining'], 146)
+        self.assertIsNone(result['daily_remaining'])
 
     def test_free_and_unlimited(self):
         now = datetime.now(timezone.utc)
-        self.assertEqual(usage_summary({'chats_today': 8}, [], now)['daily_remaining'], 0)
+        self.assertIsNone(usage_summary({'chats_today': 8}, [], now)['daily_remaining'])
         self.assertIsNone(usage_summary({'subscription_tier': 'admin'}, [], now)['daily_limit'])
         self.assertEqual(usage_summary({'subscription_tier': 'tier_199'}, [], now)['monthly_token_target'], 1250000)
         self.assertEqual(usage_summary({'subscription_tier': 'tier_999'}, [], now)['token_target'], 8000000)
