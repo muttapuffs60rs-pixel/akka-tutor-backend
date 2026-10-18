@@ -27,6 +27,7 @@ import httpx
 from database_reliability import database_options, retry_database
 from chat_queue import ChatQueue, run_queued
 from usage_meter import fetch_usage
+from profile_activity import create_profile_activity_router
 from launch_access import require_launch_access
 
 # ==========================================
@@ -142,6 +143,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
 
 answer_cache = AnswerCache(supabase, os.getenv("ANSWER_CACHE_SYLLABUS_VERSION", ""), TUTOR_CACHE_PROMPT + "|concise-900-v1")
 app.include_router(create_answer_library_router(supabase, get_current_user))
+app.include_router(create_profile_activity_router(supabase, get_current_user))
 
 TOPUP_PACKS = {"topup_49": {"amount": 49, "days": 30, "credits": 200_000}}
 
