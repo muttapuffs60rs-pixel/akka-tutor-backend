@@ -23,7 +23,7 @@ def usage_summary(profile, rows, now):
     return {
         'tier': tier, 'monthly_tokens_used': used,
         'monthly_credits_used': sum(
-            max(0, int(row['learning_credits_charged']) - int(row.get('topup_credits_charged') or 0)) if row.get('learning_credits_charged') is not None
+            max(0, int(row['learning_credits_charged']) - int(row.get('topup_credits_charged') or 0) - int(row.get('referral_credits_charged') or 0)) if row.get('learning_credits_charged') is not None
             else sum(max(0, int(row.get(field) or 0)) for field in fields) for row in rows),
         'token_period': 'lifetime' if tier == 'free' else 'monthly',
         'token_target': 30_000 if tier == 'free' else MONTHLY_TARGETS.get(tier),
@@ -42,7 +42,7 @@ def fetch_usage(client, profile, user_id, now=None):
     # PostgREST caps individual responses; paginate so heavy users aren't undercounted.
     for offset in range(0, 1_000_000, 1000):
         batch = (client.table('ai_chat_requests')
-                 .select('status,input_tokens,output_tokens,vision_input_tokens,vision_output_tokens,learning_credits_charged,topup_credits_charged')
+                 .select('status,input_tokens,output_tokens,vision_input_tokens,vision_output_tokens,learning_credits_charged,topup_credits_charged,referral_credits_charged')
                  .eq('user_id', user_id).gte('created_at',
                      '1970-01-01T00:00:00+00:00' if (profile.get('subscription_tier') or 'free') == 'free' else start.isoformat())
                  .lt('created_at', end.isoformat()).order('id')

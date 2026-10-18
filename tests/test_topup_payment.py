@@ -101,12 +101,14 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
             {'subscription_tier':'free','previous_tier':None}]
         result = await self.verify(self.request,'student')
         self.assertEqual(result['status'],'success')
-        values=self.db.table.return_value.update.call_args.args[0]
-        self.assertEqual(values['subscription_tier'],'tier_999')
+        self.assertEqual(self.db.rpc.call_args.args[0], 'apply_verified_subscription')
+        values=self.db.rpc.call_args.args[1]
+        self.assertEqual(values['tier_value'],'tier_999')
+        self.assertEqual(values['mode_value'],'test')
         from datetime import datetime, timedelta
-        self.assertEqual(datetime.fromisoformat(values['subscription_expires_at'])-
-            datetime.fromisoformat(values['subscription_start_date']),timedelta(days=30))
-        self.db.rpc.assert_not_called()
+        self.assertEqual(datetime.fromisoformat(values['expiry_value'])-
+            datetime.fromisoformat(values['start_value']),timedelta(days=30))
+        self.db.table.assert_not_called()
 
     async def test_provider_errors_do_not_expose_private_details(self):
         self.gateway.order.create.side_effect = RuntimeError('synthetic-private-provider-detail')

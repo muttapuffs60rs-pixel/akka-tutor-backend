@@ -28,6 +28,7 @@ from database_reliability import database_options, retry_database
 from chat_queue import ChatQueue, run_queued
 from usage_meter import fetch_usage
 from profile_activity import create_profile_activity_router
+from referrals import create_referral_router
 from launch_access import require_launch_access
 
 # ==========================================
@@ -144,6 +145,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(securi
 answer_cache = AnswerCache(supabase, os.getenv("ANSWER_CACHE_SYLLABUS_VERSION", ""), TUTOR_CACHE_PROMPT + "|concise-900-v1")
 app.include_router(create_answer_library_router(supabase, get_current_user))
 app.include_router(create_profile_activity_router(supabase, get_current_user))
+app.include_router(create_referral_router(supabase, get_current_user))
 
 TOPUP_PACKS = {"topup_49": {"amount": 49, "days": 30, "credits": 200_000}}
 
@@ -302,6 +304,8 @@ async def current_usage(user_id: str = Depends(get_current_user)):
         result = fetch_usage(supabase, profile, user_id)
         result['topup_remaining'] = supabase.rpc('learning_credit_balance', {
             'target_user_id': user_id}).execute().data['topup_remaining']
+        rewards = supabase.rpc('referral_summary', {'uid': user_id}).execute().data
+        result['referral_remaining'] = rewards['remaining'] if rewards['active'] else 0
         return result
     return await asyncio.to_thread(read)
 
@@ -772,27 +776,13 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         expiry_date = expiry.isoformat()    # IST timestamp
 
         
-        # Fetch current profile
-        res = supabase.table('profiles').select('subscription_tier, previous_tier').eq('id', auth_user_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="User not found")
-            
-        current_tier = res.data[0].get('subscription_tier', 'free')
-        previous_tier = res.data[0].get('previous_tier')
-        
-        if tier_id == 'tier_49_daily' and current_tier != 'tier_49_daily' and current_tier != 'free':
-            previous_tier = current_tier
-            
-        if tier_id != 'tier_49_daily':
-            previous_tier = None
-            
-        supabase.table('profiles').update({
-            'subscription_tier': tier_id,
-            'subscription_start_date': start_date,   # ← NOW SAVED
-            'subscription_expires_at': expiry_date,
-            'previous_tier': previous_tier
-        }).eq('id', auth_user_id).execute()
-        
+        payment_mode = 'test' if os.getenv('RAZORPAY_KEY_ID', '').startswith('rzp_test_') else 'live'
+        await asyncio.to_thread(retry_database, lambda: supabase.rpc('apply_verified_subscription', {
+            'uid': auth_user_id, 'payment_value': req.razorpay_payment_id,
+            'order_value': req.razorpay_order_id, 'tier_value': tier_id,
+            'mode_value': payment_mode, 'start_value': start_date,
+            'expiry_value': expiry_date}).execute().data)
+
         return {"status": "success", "message": "Payment verified and subscription updated"}
         
     except razorpay.errors.SignatureVerificationError:

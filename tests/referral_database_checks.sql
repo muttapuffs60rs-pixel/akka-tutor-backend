@@ -1,0 +1,47 @@
+BEGIN;
+DO $$
+DECLARE inviter uuid:=gen_random_uuid(); friend uuid; sid uuid; rid uuid; eid uuid; info jsonb; code_value text; tier text; total bigint:=0; reward bigint; saved bigint;
+BEGIN
+ INSERT INTO auth.users(id,aud,role,email,raw_user_meta_data,created_at,updated_at) VALUES(inviter,'authenticated','authenticated',inviter::text||'@example.invalid','{}',now(),now());
+ INSERT INTO public.profiles(id,subscription_tier,subscription_expires_at) VALUES(inviter,'tier_199',now()+interval '10 days') ON CONFLICT(id) DO UPDATE SET subscription_tier='tier_199',subscription_expires_at=now()+interval '10 days';
+ info:=public.referral_summary(inviter); code_value:=info->>'code';
+ IF (public.claim_referral(inviter,code_value))->>'error' IS NULL THEN RAISE EXCEPTION 'Self referral accepted'; END IF;
+ FOREACH tier IN ARRAY ARRAY['tier_49_daily','tier_199','tier_499','tier_999'] LOOP
+  friend:=gen_random_uuid();
+  INSERT INTO auth.users(id,aud,role,email,raw_user_meta_data,created_at,updated_at) VALUES(friend,'authenticated','authenticated',friend::text||'@example.invalid','{}',now(),now());
+  INSERT INTO public.profiles(id,subscription_tier) VALUES(friend,'free') ON CONFLICT(id) DO NOTHING;
+  IF (public.claim_referral(friend,code_value))->>'success' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Claim failed'; END IF;
+  IF (public.claim_referral(friend,code_value))->>'error' IS NULL THEN RAISE EXCEPTION 'Duplicate claim accepted'; END IF;
+  PERFORM public.apply_verified_subscription(friend,'test-'||friend,'test-order-'||friend,tier,'test',now(),now()+interval '30 days');
+  IF coalesce((public.referral_summary(inviter)->>'remaining')::bigint,0)<>total THEN RAISE EXCEPTION 'Test reward became spendable'; END IF;
+  PERFORM public.apply_verified_subscription(friend,'live-'||friend,'live-order-'||friend,tier,'live',now(),now()+interval '30 days');
+  reward:=CASE tier WHEN 'tier_49_daily' THEN 10000 WHEN 'tier_199' THEN 20000 WHEN 'tier_499' THEN 30000 ELSE 50000 END;
+  total:=total+reward;
+  PERFORM public.apply_verified_subscription(friend,'live-'||friend,'live-order-'||friend,tier,'live',now(),now()+interval '30 days');
+  PERFORM public.apply_verified_subscription(friend,'renew-'||friend,'renew-order-'||friend,tier,'live',now(),now()+interval '30 days');
+  IF (public.referral_summary(inviter)->>'remaining')::bigint<>total THEN RAISE EXCEPTION 'Wrong grant or duplicate reward'; END IF;
+  IF EXISTS(SELECT 1 FROM public.referral_balances WHERE user_id=friend AND remaining>0) THEN RAISE EXCEPTION 'Invitee received reward'; END IF;
+ END LOOP;
+ PERFORM public.learning_credit_balance(inviter);
+ INSERT INTO public.chat_sessions(user_id,title,board,grade_level,subject) VALUES(inviter,'Synthetic referral check','tn',10,'Maths') RETURNING id INTO sid;
+ INSERT INTO public.ai_chat_requests(user_id,session_id,status,learning_credits_charged,input_tokens,output_tokens) VALUES(inviter,sid,'complete',1249900,1249900,0);
+ eid:=gen_random_uuid(); info:=public.reserve_chat_request_v2(inviter,sid,gen_random_uuid(),repeat('a',64),eid); rid:=(info->>'request_id')::uuid;
+ PERFORM public.claim_chat_generation(inviter,rid,eid); PERFORM public.begin_learning_credit_request(inviter,rid);
+ PERFORM public.finish_learning_credit_request(inviter,rid,eid,'{"status":"complete","input_tokens":100,"output_tokens":200,"response_source":"model"}'::jsonb);
+ IF (SELECT referral_credits_charged FROM public.ai_chat_requests WHERE id=rid)<>200 OR (public.referral_summary(inviter)->>'remaining')::bigint<>total-200 THEN RAISE EXCEPTION 'Earned credits not settled correctly'; END IF;
+ PERFORM public.finish_learning_credit_request(inviter,rid,eid,'{"status":"complete","input_tokens":100,"output_tokens":200,"response_source":"model"}'::jsonb);
+ IF (public.referral_summary(inviter)->>'remaining')::bigint<>total-200 THEN RAISE EXCEPTION 'Replay consumed credits twice'; END IF;
+ UPDATE public.profiles SET subscription_expires_at=now()-interval '1 day' WHERE id=inviter;
+ IF (public.referral_summary(inviter)->>'active')::boolean THEN RAISE EXCEPTION 'Expired reward unlocked'; END IF;
+ saved:=(public.referral_summary(inviter)->>'remaining')::bigint;
+ eid:=gen_random_uuid(); info:=public.reserve_chat_request_v2(inviter,sid,gen_random_uuid(),repeat('a',64),eid); rid:=(info->>'request_id')::uuid;
+ PERFORM public.claim_chat_generation(inviter,rid,eid); PERFORM public.begin_learning_credit_request(inviter,rid);
+ PERFORM public.finish_learning_credit_request(inviter,rid,eid,'{"status":"complete","input_tokens":100,"output_tokens":200,"response_source":"model"}'::jsonb);
+ IF (SELECT referral_credits_charged FROM public.ai_chat_requests WHERE id=rid)<>0 OR (public.referral_summary(inviter)->>'remaining')::bigint<>saved THEN RAISE EXCEPTION 'Expired credits spent'; END IF;
+ UPDATE public.profiles SET subscription_expires_at=now()+interval '30 days' WHERE id=inviter;
+ IF NOT (public.referral_summary(inviter)->>'active')::boolean OR (public.referral_summary(inviter)->>'remaining')::bigint<>saved THEN RAISE EXCEPTION 'Renewal lost rewards'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_class WHERE oid IN ('public.referral_codes'::regclass,'public.referral_links'::regclass,'public.referral_rewards'::regclass,'public.referral_balances'::regclass,'public.verified_subscription_payments'::regclass) AND NOT relrowsecurity) THEN RAISE EXCEPTION 'RLS missing'; END IF;
+ IF has_function_privilege('authenticated','public.apply_verified_subscription(uuid,text,text,text,text,timestamptz,timestamptz)','EXECUTE') THEN RAISE EXCEPTION 'Client can grant rewards'; END IF;
+END $$;
+ROLLBACK;
+SELECT 'PASS: all reward tiers, inviter-only, test/live separation, first purchase, replay, earned-credit debit, expiry locking, renewal and permissions; synthetic data rolled back.' AS result;

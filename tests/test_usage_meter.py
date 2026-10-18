@@ -22,6 +22,12 @@ class UsageMeterTests(unittest.TestCase):
         self.assertEqual(result['monthly_credits_used'], 0)
         self.assertEqual(result['monthly_tokens_used'], 0)
 
+    def test_referral_spend_is_not_deducted_twice_from_plan(self):
+        result = usage_summary({'subscription_tier': 'tier_199'}, [
+            {'status': 'complete', 'input_tokens': 300, 'output_tokens': 0,
+             'learning_credits_charged': 300, 'referral_credits_charged': 200}], datetime.now(timezone.utc))
+        self.assertEqual(result['monthly_credits_used'], 100)
+
     def test_ist_month_boundary(self):
         start, end = monthly_window(datetime(2026, 12, 31, 19, tzinfo=timezone.utc))
         self.assertEqual((start.year, start.month, start.day), (2027, 1, 1))
