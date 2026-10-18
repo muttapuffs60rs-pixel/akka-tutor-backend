@@ -47,7 +47,7 @@ class UsageMeterTests(unittest.TestCase):
         self.assertIsNone(usage_summary({'subscription_tier': 'admin'}, [], now)['daily_limit'])
         self.assertEqual(usage_summary({'subscription_tier': 'tier_199'}, [], now)['monthly_token_target'], 1250000)
         self.assertEqual(usage_summary({'subscription_tier': 'tier_999'}, [], now)['token_target'], 8000000)
-        self.assertEqual(usage_summary({}, [], now)['token_target'], 50000)
+        self.assertEqual(usage_summary({}, [], now)['token_target'], 30000)
         self.assertEqual(usage_summary({}, [], now)['token_period'], 'lifetime')
 
     def test_scopes_and_paginates(self):

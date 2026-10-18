@@ -28,7 +28,7 @@ def usage_summary(profile, rows, now):
             max(0, int(row['learning_credits_charged']) - int(row.get('topup_credits_charged') or 0)) if row.get('learning_credits_charged') is not None
             else sum(max(0, int(row.get(field) or 0)) for field in fields) for row in rows),
         'token_period': 'lifetime' if tier == 'free' else 'monthly',
-        'token_target': 50_000 if tier == 'free' else MONTHLY_TARGETS.get(tier),
+        'token_target': 30_000 if tier == 'free' else MONTHLY_TARGETS.get(tier),
         'monthly_token_target': MONTHLY_TARGETS.get(tier),
         'monthly_limit_enforced': False, 'unmetered_requests': unknown,
         'period_start': start.isoformat(), 'period_end': end.isoformat(),
