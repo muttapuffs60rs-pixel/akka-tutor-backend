@@ -34,7 +34,8 @@ class ProfileActivityTests(unittest.TestCase):
         self.assertTrue(body['has_more'])
         self.query.eq.assert_called_once_with('user_id', 'signed-in-student')
         self.query.range.assert_called_once_with(20, 40)
-        self.assertEqual(set(body['items'][0]), {'id','created_at','session_id','credits_used','topup_credits_used','kind'})
+        self.assertEqual(set(body['items'][0]), {'id','created_at','session_id','credits_used','topup_credits_used','kind','credit_pending'})
+        self.assertIsNone(body['items'][0]['credit_pending'])
         self.assertNotIn('provider_secret', response.text)
         self.assertEqual(body['items'][0]['kind'], 'Saved textbook answer')
 
@@ -43,6 +44,12 @@ class ProfileActivityTests(unittest.TestCase):
         for offset in (-1, 10001):
             self.assertEqual(self.client.get(f'/profile/activity?offset={offset}', headers=self.headers).status_code, 422)
         self.db.table.assert_not_called()
+
+    def test_returns_stored_balance_without_recalculating_history(self):
+        self.query.execute.return_value.data[0]['credit_balance_after'] = 1220500
+        body = self.client.get('/profile/activity', headers=self.headers).json()
+        self.assertEqual(body['items'][0]['credit_pending'], 1220500)
+        self.assertIsNone(body['items'][1]['credit_pending'])
 
     def test_empty_history_and_private_error_handling(self):
         self.query.execute.return_value.data = []
