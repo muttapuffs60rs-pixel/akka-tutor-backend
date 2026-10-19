@@ -27,11 +27,11 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
         self.gateway.payment.fetch.return_value = {'amount': 4900, 'currency': 'INR',
             'order_id': 'order_test', 'status': 'captured'}
         self.db = Mock()
-        self.db.rpc.return_value.execute.return_value.data = {'credits': 200000}
+        self.db.rpc.return_value.execute.return_value.data = {'credits': 300000}
         env = dict(globals(), razorpay_client=self.gateway, supabase=self.db,
             razorpay=SimpleNamespace(errors=SimpleNamespace(SignatureVerificationError=type('BadSignature',(Exception,),{}))),
             VerifyPaymentRequest=object, OrderRequest=object, get_current_user=lambda: None,
-            TOPUP_PACKS={'topup_49': {'amount':49,'days':30,'credits':200000}}, TIER_PRICES={'tier_999': {'amount':999,'days':30}})
+            TOPUP_PACKS={'topup_49': {'amount':49,'days':30,'credits':300000}}, TIER_PRICES={'tier_999': {'amount':999,'days':30}})
         exec(compile(ast.Module(body=nodes,type_ignores=[]),'main.py','exec'),env)
         self.verify = env['verify_payment']
         self.create = env['create_order']
@@ -40,7 +40,7 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_captured_payment_grants_pack_without_changing_subscription(self):
         result = await self.verify(self.request,'student')
-        self.assertEqual(result['topup']['credits'],200000)
+        self.assertEqual(result['topup']['credits'],300000)
         self.db.table.assert_not_called()
         self.db.rpc.assert_called_once_with('grant_learning_credit_topup', {
             'target_user_id':'student','payment_id_value':'pay_test','order_id_value':'order_test'})
@@ -59,11 +59,21 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
                 await self.verify(self.request,'student')
         self.db.rpc.assert_not_called()
 
-    async def test_topup_orders_stay_disabled_until_payment_launch(self):
-        with self.assertRaises(HTTPException) as error:
-            await self.create(SimpleNamespace(tier_id='topup_49'),'student')
-        self.assertEqual(error.exception.status_code,503)
+    async def test_topup_rejects_ineligible_and_unavailable_eligibility(self):
+        for eligibility in ({'eligible':False}, {}, None):
+            self.db.rpc.return_value.execute.return_value.data=eligibility
+            with self.assertRaises(HTTPException) as error:
+                await self.create(SimpleNamespace(tier_id='topup_49'),'student')
+            self.assertEqual(error.exception.status_code,403)
         self.gateway.order.create.assert_not_called()
+
+    async def test_eligible_topup_creates_49_rupee_order(self):
+        self.db.rpc.return_value.execute.return_value.data={'eligible':True}
+        self.gateway.order.create.return_value={'id':'order_test','amount':4900,'currency':'INR'}
+        result=await self.create(SimpleNamespace(tier_id='topup_49'),'student')
+        self.assertEqual(result['amount'],4900)
+        self.assertEqual(self.gateway.order.create.call_args.args[0]['amount'],4900)
+        self.db.rpc.assert_called_once_with('learning_topup_eligibility',{'target_user_id':'student'})
 
     async def test_orders_use_server_prices_and_public_key(self):
         self.gateway.order.create.return_value = {'id':'order_test', 'amount':4900, 'currency':'INR'}

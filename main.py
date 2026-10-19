@@ -151,7 +151,7 @@ app.include_router(create_answer_library_router(supabase, get_current_user))
 app.include_router(create_profile_activity_router(supabase, get_current_user))
 app.include_router(create_referral_router(supabase, get_current_user))
 
-TOPUP_PACKS = {"topup_49": {"amount": 49, "days": 30, "credits": 200_000}}
+TOPUP_PACKS = {"topup_49": {"amount": 49, "credits": 300_000}}
 
 TIER_PRICES = {
     # Keep the stored tier ID compatible with existing profiles and quota RPCs.
@@ -684,20 +684,23 @@ async def payment_status():
     return {"release": "live-checkout-v1", "configured": configured,
             "mode": mode, "checkout_enabled": configured and (mode == "test" or live_enabled),
             "webhook_configured": bool(os.getenv("RAZORPAY_WEBHOOK_SECRET")),
-            "live_charging_enabled": bool(live_enabled), "topups_enabled": False}
+            "live_charging_enabled": bool(live_enabled), "topups_enabled": True}
 
 
 @app.post("/create-order")
 async def create_order(req: OrderRequest, user_id: str = Depends(get_current_user)):
-    if req.tier_id in TOPUP_PACKS:
-        raise HTTPException(503, "Top-up payments are not available yet.")
     if not razorpay_client:
         raise HTTPException(status_code=500, detail="Razorpay not configured")
     key_id = os.getenv("RAZORPAY_KEY_ID", "")
     if not (await payment_status())["checkout_enabled"]:
         raise HTTPException(503, "Payments are not enabled. Please contact support.")
     try:
-        tier_info = TIER_PRICES.get(req.tier_id)
+        if req.tier_id in TOPUP_PACKS:
+            eligibility = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
+                'learning_topup_eligibility', {'target_user_id': user_id}).execute().data)
+            if not isinstance(eligibility, dict) or eligibility.get('eligible') is not True:
+                raise HTTPException(403, 'Top-ups require an active Standard, Syllabus Master or Premium subscription.')
+        tier_info = TOPUP_PACKS.get(req.tier_id) or TIER_PRICES.get(req.tier_id)
         if not tier_info:
             raise HTTPException(status_code=400, detail="Invalid tier_id")
             
