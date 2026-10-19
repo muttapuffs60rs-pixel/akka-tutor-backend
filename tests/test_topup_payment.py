@@ -5,6 +5,7 @@ import traceback
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from uuid import uuid4
 from unittest.mock import Mock
 from fastapi import HTTPException, Depends
 from database_reliability import retry_database
@@ -13,11 +14,11 @@ from database_reliability import retry_database
 class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         from unittest.mock import patch
-        env_patch = patch.dict(os.environ, {'RAZORPAY_KEY_ID': 'rzp_test_synthetic'})
+        env_patch = patch.dict(os.environ, {'RAZORPAY_KEY_ID': 'rzp_test_synthetic', 'RAZORPAY_KEY_SECRET': 'synthetic', 'RAZORPAY_LIVE_ENABLED': 'false'})
         env_patch.start()
         self.addCleanup(env_patch.stop)
         nodes = [n for n in ast.parse((Path(__file__).parents[1]/'main.py').read_text(encoding='utf-8')).body
-                 if getattr(n, 'name', '') in ('verify_payment', 'create_order', 'payment_status')]
+                 if getattr(n, 'name', '') in ('verify_payment', '_activate_captured_payment', 'create_order', 'payment_status')]
         for n in nodes:
             n.decorator_list = []
         self.gateway = Mock()
@@ -72,8 +73,30 @@ class TopupPaymentTests(unittest.IsolatedAsyncioTestCase):
                 result = await self.create(SimpleNamespace(tier_id=tier),'student')
                 sent = self.gateway.order.create.call_args.args[0]
                 self.assertEqual(sent['amount'],price)
-                self.assertEqual(sent['notes'],{'tier_id':tier,'user_id':'student'})
+                self.assertEqual(sent['notes'],{'app':'arivora','tier_id':tier,'user_id':'student'})
                 self.assertEqual(result['key_id'],'rzp_test_public')
+
+    async def test_live_requires_explicit_enablement_and_webhook_secret(self):
+        from unittest.mock import patch
+        for enabled, secret in [('false','secret'), ('true','')]:
+            with patch.dict(os.environ, {'RAZORPAY_KEY_ID':'rzp_live_synthetic',
+                                       'RAZORPAY_LIVE_ENABLED':enabled,
+                                       'RAZORPAY_WEBHOOK_SECRET':secret}):
+                self.assertFalse((await self.status())['checkout_enabled'])
+                with self.assertRaises(HTTPException):
+                    await self.create(SimpleNamespace(tier_id='tier_999'),'student')
+        self.gateway.order.create.assert_not_called()
+
+    async def test_explicit_live_configuration_creates_server_priced_order(self):
+        from unittest.mock import patch
+        self.gateway.order.create.return_value = {'id':'order_live','amount':99900,'currency':'INR'}
+        with patch.dict(os.environ, {'RAZORPAY_KEY_ID':'rzp_live_synthetic',
+                                   'RAZORPAY_LIVE_ENABLED':'true',
+                                   'RAZORPAY_WEBHOOK_SECRET':'synthetic'}):
+            self.assertTrue((await self.status())['live_charging_enabled'])
+            result = await self.create(SimpleNamespace(tier_id='tier_999'),'student')
+            self.assertEqual(result['key_id'],'rzp_live_synthetic')
+            self.assertEqual(self.gateway.order.create.call_args.args[0]['amount'],99900)
 
     async def test_invalid_plan_is_400(self):
         with self.assertRaises(HTTPException) as error:

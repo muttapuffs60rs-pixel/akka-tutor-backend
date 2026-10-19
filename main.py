@@ -31,6 +31,7 @@ from chat_queue import ChatQueue, run_queued
 from usage_meter import fetch_usage
 from profile_activity import create_profile_activity_router
 from referrals import create_referral_router
+from payment_webhook import handle_capture
 from launch_access import require_launch_access
 
 # ==========================================
@@ -677,9 +678,13 @@ async def payment_status():
     key_id = os.getenv("RAZORPAY_KEY_ID", "")
     configured = bool(key_id and os.getenv("RAZORPAY_KEY_SECRET") and razorpay_client)
     mode = "test" if key_id.startswith("rzp_test_") else "live" if key_id.startswith("rzp_live_") else "unconfigured"
-    return {"release": "sandbox-checkout-v1", "configured": configured,
-            "mode": mode, "checkout_enabled": configured and mode == "test",
-            "live_charging_enabled": False, "topups_enabled": False}
+    live_enabled = (mode == "live" and configured
+                    and os.getenv("RAZORPAY_LIVE_ENABLED", "").lower() == "true"
+                    and bool(os.getenv("RAZORPAY_WEBHOOK_SECRET")))
+    return {"release": "live-checkout-v1", "configured": configured,
+            "mode": mode, "checkout_enabled": configured and (mode == "test" or live_enabled),
+            "webhook_configured": bool(os.getenv("RAZORPAY_WEBHOOK_SECRET")),
+            "live_charging_enabled": bool(live_enabled), "topups_enabled": False}
 
 
 @app.post("/create-order")
@@ -689,9 +694,8 @@ async def create_order(req: OrderRequest, user_id: str = Depends(get_current_use
     if not razorpay_client:
         raise HTTPException(status_code=500, detail="Razorpay not configured")
     key_id = os.getenv("RAZORPAY_KEY_ID", "")
-    # Keep the integration in the sandbox until live charging is explicitly enabled.
-    if not key_id.startswith("rzp_test_"):
-        raise HTTPException(503, "Checkout is available in Razorpay Test Mode only. Live payments are not enabled.")
+    if not (await payment_status())["checkout_enabled"]:
+        raise HTTPException(503, "Payments are not enabled. Please contact support.")
     try:
         tier_info = TIER_PRICES.get(req.tier_id)
         if not tier_info:
@@ -699,8 +703,8 @@ async def create_order(req: OrderRequest, user_id: str = Depends(get_current_use
             
         order_amount = tier_info['amount'] * 100 # convert to paise
         order_currency = 'INR'
-        order_receipt = f'rcpt_{user_id[:8]}'
-        notes = {'tier_id': req.tier_id, 'user_id': user_id}
+        order_receipt = f'arv_{uuid4().hex}'
+        notes = {'app': 'arivora', 'tier_id': req.tier_id, 'user_id': user_id}
         
         response = razorpay_client.order.create(dict(amount=order_amount, currency=order_currency, receipt=order_receipt, notes=notes))
         return {**response, 'key_id': os.getenv('RAZORPAY_KEY_ID')}
@@ -723,77 +727,93 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
         
         razorpay_client.utility.verify_payment_signature(params_dict)
         
-        # Fetch order from Razorpay to get the trusted tier_id and user_id
-        order = razorpay_client.order.fetch(req.razorpay_order_id)
-        notes = order.get('notes', {})
-        
-        tier_id = notes.get('tier_id')
-        order_user_id = notes.get('user_id')
-        
-        if order_user_id != auth_user_id:
-            raise HTTPException(status_code=403, detail="Order user mismatch")
+        return await _activate_captured_payment(req, auth_user_id)
 
-        if tier_id in TOPUP_PACKS:
-            # No subscription mutation. Grant only after captured payment validation.
-            pack = TOPUP_PACKS[tier_id]
-            payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
-            expected_amount = pack['amount'] * 100
-            if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
-                    or payment.get('order_id') != req.razorpay_order_id
-                    or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
-                    or payment.get('status') != 'captured'):
-                raise HTTPException(400, 'Top-up payment is not captured or does not match the pack')
-            grant = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
-                'grant_learning_credit_topup', {'target_user_id': auth_user_id,
-                    'payment_id_value': req.razorpay_payment_id,
-                    'order_id_value': req.razorpay_order_id}).execute().data)
-            return {'status': 'success', 'topup': grant}
-            
-        tier_info = TIER_PRICES.get(tier_id)
-        if not tier_info:
-            raise HTTPException(status_code=400, detail="Invalid tier in order notes")
-            
-        payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
-        expected_amount = tier_info['amount'] * 100
-        if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
-                or payment.get('order_id') != req.razorpay_order_id
-                or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
-                or payment.get('status') != 'captured'):
-            raise HTTPException(400, 'Payment is not captured or does not match the plan')
-
-        # Payment is verified, update the user's subscription
-        from datetime import datetime, timedelta, timezone
-        
-        # IST = UTC + 5:30
-        IST = timezone(timedelta(hours=5, minutes=30))
-        now_ist = datetime.now(IST)
-        
-        if tier_id == 'tier_49_daily':
-            # Expires at 11:59:59 PM IST today
-            expiry = now_ist.replace(hour=23, minute=59, second=59, microsecond=0)
-        else:
-            # Monthly plans: exactly 30 days from now in IST
-            expiry = now_ist + timedelta(days=tier_info['days'])
-            
-        start_date  = now_ist.isoformat()   # IST timestamp
-        expiry_date = expiry.isoformat()    # IST timestamp
-
-        
-        payment_mode = 'test' if os.getenv('RAZORPAY_KEY_ID', '').startswith('rzp_test_') else 'live'
-        await asyncio.to_thread(retry_database, lambda: supabase.rpc('apply_verified_subscription', {
-            'uid': auth_user_id, 'payment_value': req.razorpay_payment_id,
-            'order_value': req.razorpay_order_id, 'tier_value': tier_id,
-            'mode_value': payment_mode, 'start_value': start_date,
-            'expiry_value': expiry_date}).execute().data)
-
-        return {"status": "success", "message": "Payment verified and subscription updated"}
-        
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid Payment Signature")
     except HTTPException:
         raise
     except Exception:
         raise HTTPException(status_code=502, detail='Payment verification is temporarily unavailable. Do not pay again; contact support.')
+
+@app.post('/payments/webhook')
+async def payment_webhook(request: Request):
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > 256 * 1024:
+            raise HTTPException(413, 'Webhook payload too large.')
+    return await handle_capture(bytes(body), request.headers.get('X-Razorpay-Signature', ''),
+                                os.getenv('RAZORPAY_WEBHOOK_SECRET', ''), razorpay_client,
+                                _activate_captured_payment)
+
+
+async def _activate_captured_payment(req, auth_user_id):
+    # Fetch order from Razorpay to get the trusted tier_id and user_id
+    order = razorpay_client.order.fetch(req.razorpay_order_id)
+    notes = order.get('notes', {})
+
+    tier_id = notes.get('tier_id')
+    order_user_id = notes.get('user_id')
+
+    if order_user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Order user mismatch")
+
+    if tier_id in TOPUP_PACKS:
+        # No subscription mutation. Grant only after captured payment validation.
+        pack = TOPUP_PACKS[tier_id]
+        payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
+        expected_amount = pack['amount'] * 100
+        if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
+                or payment.get('order_id') != req.razorpay_order_id
+                or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
+                or payment.get('status') != 'captured'):
+            raise HTTPException(400, 'Top-up payment is not captured or does not match the pack')
+        grant = await asyncio.to_thread(retry_database, lambda: supabase.rpc(
+            'grant_learning_credit_topup', {'target_user_id': auth_user_id,
+                'payment_id_value': req.razorpay_payment_id,
+                'order_id_value': req.razorpay_order_id}).execute().data)
+        return {'status': 'success', 'topup': grant}
+
+    tier_info = TIER_PRICES.get(tier_id)
+    if not tier_info:
+        raise HTTPException(status_code=400, detail="Invalid tier in order notes")
+
+    payment = razorpay_client.payment.fetch(req.razorpay_payment_id)
+    expected_amount = tier_info['amount'] * 100
+    if (order.get('amount') != expected_amount or order.get('currency') != 'INR'
+            or payment.get('order_id') != req.razorpay_order_id
+            or payment.get('amount') != expected_amount or payment.get('currency') != 'INR'
+            or payment.get('status') != 'captured'):
+        raise HTTPException(400, 'Payment is not captured or does not match the plan')
+
+    # Payment is verified, update the user's subscription
+    from datetime import datetime, timedelta, timezone
+
+    # IST = UTC + 5:30
+    IST = timezone(timedelta(hours=5, minutes=30))
+    now_ist = datetime.now(IST)
+
+    if tier_id == 'tier_49_daily':
+        # Expires at 11:59:59 PM IST today
+        expiry = now_ist.replace(hour=23, minute=59, second=59, microsecond=0)
+    else:
+        # Monthly plans: exactly 30 days from now in IST
+        expiry = now_ist + timedelta(days=tier_info['days'])
+
+    start_date  = now_ist.isoformat()   # IST timestamp
+    expiry_date = expiry.isoformat()    # IST timestamp
+
+
+    payment_mode = 'test' if os.getenv('RAZORPAY_KEY_ID', '').startswith('rzp_test_') else 'live'
+    await asyncio.to_thread(retry_database, lambda: supabase.rpc('apply_verified_subscription', {
+        'uid': auth_user_id, 'payment_value': req.razorpay_payment_id,
+        'order_value': req.razorpay_order_id, 'tier_value': tier_id,
+        'mode_value': payment_mode, 'start_value': start_date,
+        'expiry_value': expiry_date}).execute().data)
+
+    return {"status": "success", "message": "Payment verified and subscription updated"}
+
 
 # ==========================================
 # 7. LIVE QUIZ
