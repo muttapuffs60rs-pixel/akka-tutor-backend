@@ -16,10 +16,12 @@ from pydantic import BaseModel, Field, ValidationError
 
 from image_security import MAX_IMAGE_BYTES, download_chat_image, validate_image_url
 from prompts import AKKA_QUIZ_PROMPT
+from quiz_security import SecureStudentAnswer, secure_answer
 
 ROOT = Path(__file__).resolve().parents[1]
+OWNER = "00000000-0000-0000-0000-000000000001"
 ORIGIN = "https://example.supabase.co"
-IMAGE = ORIGIN + "/storage/v1/object/public/chat-images/chat_uploads/test.jpg"
+IMAGE = ORIGIN + f"/storage/v1/object/authenticated/chat-images/chat_uploads/{OWNER}/test.jpg"
 
 
 def load_routes():
@@ -36,6 +38,7 @@ def load_routes():
         "List": List, "BaseModel": BaseModel, "Field": Field,
         "asyncio": asyncio, "traceback": traceback, "HTTPException": HTTPException,
         "Depends": Depends, "get_current_user": lambda: None,
+        "SecureStudentAnswer": SecureStudentAnswer, "secure_answer": secure_answer,
         "ChatPromptTemplate": ChatPromptTemplate, "AKKA_QUIZ_PROMPT": AKKA_QUIZ_PROMPT,
     }
     exec(compile(ast.Module(body=definitions, type_ignores=[]), str(ROOT / "main.py"), "exec"), namespace)
@@ -44,7 +47,7 @@ def load_routes():
 
 class ImageSecurityTests(unittest.TestCase):
     def test_only_the_app_storage_path_is_allowed(self):
-        self.assertEqual(validate_image_url(IMAGE, ORIGIN), IMAGE)
+        self.assertEqual(validate_image_url(IMAGE, ORIGIN, OWNER), IMAGE)
         for url in (
             "http://127.0.0.1/private", "http://169.254.169.254/latest/meta-data/",
             "https://example.supabase.co.evil.test/image.jpg",
@@ -57,7 +60,7 @@ class ImageSecurityTests(unittest.TestCase):
             IMAGE.replace("test.jpg", "..\\secrets"),
         ):
             with self.subTest(url=url), self.assertRaises(HTTPException) as error:
-                validate_image_url(url, ORIGIN)
+                validate_image_url(url, ORIGIN, OWNER)
             self.assertEqual(error.exception.status_code, 400)
 
     @patch("image_security.requests.get")
@@ -65,7 +68,7 @@ class ImageSecurityTests(unittest.TestCase):
         response = Mock(status_code=200, headers={"Content-Type": "image/jpeg"})
         response.iter_content.return_value = [b"image", b"bytes"]
         request.return_value.__enter__.return_value = response
-        self.assertEqual(download_chat_image(IMAGE, ORIGIN), (b"imagebytes", "image/jpeg"))
+        self.assertEqual(download_chat_image(IMAGE, ORIGIN, OWNER, "synthetic-key"), (b"imagebytes", "image/jpeg"))
         self.assertFalse(request.call_args.kwargs["allow_redirects"])
         self.assertTrue(request.call_args.kwargs["stream"])
 
@@ -81,7 +84,7 @@ class ImageSecurityTests(unittest.TestCase):
             response.iter_content.return_value = chunks
             request.return_value.__enter__.return_value = response
             with self.subTest(status=status, mime=mime, expected=expected), self.assertRaises(HTTPException) as error:
-                download_chat_image(IMAGE, ORIGIN)
+                download_chat_image(IMAGE, ORIGIN, OWNER, "synthetic-key")
             self.assertEqual(error.exception.status_code, expected)
 
 
@@ -148,21 +151,16 @@ class QuizRouteTests(unittest.IsolatedAsyncioTestCase):
                 self.routes["QuizRequest"](subject="Science", grade_level=10, units=["Unit 1"], num_questions=count)
 
     async def test_question_from_another_session_cannot_be_scored(self):
-        session_query = Mock()
-        session_query.select.return_value = session_query
-        session_query.eq.return_value = session_query
-        session_query.execute.return_value.data = [{"id": "session-a", "status": "active", "current_question_index": 0}]
-        question_query = Mock()
-        question_query.select.return_value = question_query
-        question_query.eq.return_value = question_query
-        question_query.execute.return_value.data = []
-        self.database.table.side_effect = lambda name: session_query if name == "quiz_sessions" else question_query
-        data = self.routes["StudentAnswerRequest"](question_id="other-session-question", submitted_answer="B", student_name="Student")
+        self.database.rpc.return_value.execute.return_value.data = {'error': 'not_found'}
+        data = self.routes['StudentAnswerRequest'](
+            question_id='00000000-0000-0000-0000-000000000099', submitted_answer='B', student_name='Student')
         with self.assertRaises(HTTPException) as error:
-            await self.routes["submit_answer"]("ABC123", data, "student")
+            await self.routes['submit_answer']('ABC123', data, 'student')
         self.assertEqual(error.exception.status_code, 404)
-        self.assertIn(unittest.mock.call("session_id", "session-a"), question_query.eq.call_args_list)
-        question_query.insert.assert_not_called()
+        self.database.rpc.assert_called_with('secure_answer_live_quiz', {
+            'uid': 'student', 'code_value': 'ABC123', 'question_value': str(data.question_id),
+            'answer_value': 'B', 'name_value': 'Student'})
+        self.database.table.assert_not_called()
 
 
 if __name__ == "__main__":

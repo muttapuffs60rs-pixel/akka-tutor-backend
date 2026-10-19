@@ -18,6 +18,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from prompts import AKKA_QUIZ_PROMPT, TUTOR_CACHE_PROMPT, build_tutor_prompt
 from image_security import download_chat_image
+from quiz_security import (QuizBodyLimit, SecureLiveQuizCreate, SecureStudentAnswer, secure_create,
+                           secure_get, secure_answer, secure_leaderboard)
 from chat_cost_controls import bounded_history, clip_text, MAX_REPLY_TOKENS, retrieval_query, chat_model_options
 from answer_cache import AnswerCache, eligible_question
 from answer_library_api import create_answer_library_router
@@ -69,6 +71,7 @@ except Exception as e:
     razorpay_client = None
 
 app = FastAPI(title="Akka Tutor API")
+app.add_middleware(QuizBodyLimit)
 chat_queue = ChatQueue(active=20, waiting=40, timeout=25)
 
 app.add_middleware(
@@ -428,7 +431,7 @@ async def perform_chat(data: ChatRequest, user_id: str):
 
         if data.image_url and data.image_url.strip():
             image_bytes, image_mime = await asyncio.to_thread(
-                download_chat_image, data.image_url, os.getenv("SUPABASE_URL", "")
+                download_chat_image, data.image_url, os.getenv("SUPABASE_URL", ""), user_id, os.getenv("SUPABASE_KEY", "")
             )
 
             # --- Step 1: Try EasyOCR (fast, good for text-heavy images) ---
@@ -796,183 +799,21 @@ async def verify_payment(req: VerifyPaymentRequest, auth_user_id: str = Depends(
 # 7. LIVE QUIZ
 # ==========================================
 
-class LiveQuizCreate(BaseModel):
-    title: str
-    questions: List[dict]
+class LiveQuizCreate(SecureLiveQuizCreate):
+    pass
 
-class StudentAnswerRequest(BaseModel):
-    question_id: str
-    submitted_answer: str
-    student_name: str
+class StudentAnswerRequest(SecureStudentAnswer):
+    pass
 
-def _generate_session_code() -> str:
-    """Generate a unique 6-char alphanumeric code, retried on collision."""
-    chars = string.ascii_uppercase + string.digits
-    for _ in range(10):
-        code = ''.join(random.choices(chars, k=6))
-        existing = supabase.table('quiz_sessions').select('id').eq('session_code', code).execute()
-        if not existing.data:
-            return code
-    raise RuntimeError("Could not generate unique session code")
 
 @app.post("/live-quiz/create")
 async def create_live_quiz(data: LiveQuizCreate, teacher_id: str = Depends(get_current_user)):
-    try:
-        # Check subscription details for free tier limit checks
-        profile_res = supabase.table("profiles").select("subscription_tier").eq("id", teacher_id).execute()
-        if not profile_res.data:
-            raise HTTPException(status_code=404, detail="Teacher profile not found")
-        
-        user_tier = str(profile_res.data[0].get("subscription_tier", "free")).strip().lower()
-        if user_tier != "admin":
-            from datetime import datetime, timedelta
-            ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
-            
-            if user_tier == "free":
-                # Count quizzes created by this teacher in the current calendar month (IST)
-                first_day = ist_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                first_day_iso = first_day.strftime('%Y-%m-%dT%H:%M:%S+05:30')
-                
-                existing = supabase.table('quiz_sessions')\
-                    .select('id', count='exact')\
-                    .eq('teacher_id', teacher_id)\
-                    .gte('created_at', first_day_iso)\
-                    .execute()
-                
-                created_count = existing.count or 0
-                if created_count >= 1:
-                    raise HTTPException(
-                        status_code=403,
-                        detail="Unpaid users can only host 1 live quiz per month. Upgrade to Pro for unlimited hosting!"
-                    )
-            elif user_tier in ["tier_199", "tier_499", "tier_999"]:
-                # Count quizzes created by this teacher today in IST
-                limit = 3 if user_tier == "tier_199" else 5
-                start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
-                start_of_today_iso = start_of_today.strftime('%Y-%m-%dT%H:%M:%S+05:30')
-                
-                existing = supabase.table('quiz_sessions')\
-                    .select('id', count='exact')\
-                    .eq('teacher_id', teacher_id)\
-                    .gte('created_at', start_of_today_iso)\
-                    .execute()
-                
-                created_count = existing.count or 0
-                if created_count >= limit:
-                    raise HTTPException(
-                        status_code=403,
-                        detail=f"As a {user_tier.replace('_', ' ').title()} user, you can only host {limit} live quizzes per day. Upgrade plan to increase limits!"
-                    )
-
-        session_code = _generate_session_code()
-        session = supabase.table('quiz_sessions').insert({
-            'session_code': session_code,
-            'teacher_id': teacher_id,
-            'title': data.title,
-            'status': 'waiting',
-            'current_question_index': -1
-        }).execute()
-        session_id = session.data[0]['id']
-
-        questions = []
-        for i, q in enumerate(data.questions):
-            questions.append({
-                'session_id': session_id,
-                'question_text': q['question_text'],
-                'question_type': q['question_type'],
-                'options': q.get('options'),
-                'correct_answer': q['correct_answer'],
-                'points': q.get('points', 1),
-                'sort_order': q.get('sort_order', i)
-            })
-        supabase.table('quiz_questions').insert(questions).execute()
-
-        return {
-            'session_id': session_id,
-            'session_code': session_code,
-            'title': data.title,
-            'question_count': len(data.questions)
-        }
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+    return await secure_create(supabase, data, teacher_id)
 
 
 @app.get("/live-quiz/{code}")
 async def get_live_quiz(code: str, user_id: str = Depends(get_current_user)):
-    try:
-        session = supabase.table('quiz_sessions').select('*').eq('session_code', code.upper()).execute()
-        if not session.data:
-            raise HTTPException(status_code=404, detail="Session not found")
-        s = session.data[0]
-        is_teacher = s['teacher_id'] == user_id
-
-        # Check student participation limit
-        if not is_teacher:
-            profile_res = supabase.table("profiles").select("subscription_tier").eq("id", user_id).execute()
-            if not profile_res.data:
-                raise HTTPException(status_code=404, detail="Student profile not found")
-            
-            user_tier = str(profile_res.data[0].get("subscription_tier", "free")).strip().lower()
-            if user_tier != 'admin':
-                from datetime import datetime, timedelta
-                ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
-                
-                if user_tier == "free":
-                    first_day = ist_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                    first_day_iso = first_day.strftime('%Y-%m-%dT%H:%M:%S+05:30')
-                    
-                    # Fetch all responses by this student this month
-                    existing_responses = supabase.table('quiz_responses')\
-                        .select('session_id')\
-                        .eq('student_id', user_id)\
-                        .gte('created_at', first_day_iso)\
-                        .execute()
-                    
-                    # Get unique session IDs
-                    unique_session_ids = {r['session_id'] for r in existing_responses.data} if existing_responses.data else set()
-                    
-                    # If they haven't joined this session yet and have already used their 3 free slots
-                    if s['id'] not in unique_session_ids and len(unique_session_ids) >= 3:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="Unpaid users can only participate in 3 live quizzes per month. Upgrade to Pro for unlimited access!"
-                        )
-                elif user_tier in ["tier_199", "tier_499", "tier_999"]:
-                    # Paid users: daily unique session limits
-                    limit = 10 if user_tier == "tier_199" else 15
-                    start_of_today = ist_now.replace(hour=0, minute=0, second=0, microsecond=0)
-                    start_of_today_iso = start_of_today.strftime('%Y-%m-%dT%H:%M:%S+05:30')
-                    
-                    # Fetch all responses by this student today
-                    existing_responses = supabase.table('quiz_responses')\
-                        .select('session_id')\
-                        .eq('student_id', user_id)\
-                        .gte('created_at', start_of_today_iso)\
-                        .execute()
-                    
-                    unique_session_ids = {r['session_id'] for r in existing_responses.data} if existing_responses.data else set()
-                    
-                    if s['id'] not in unique_session_ids and len(unique_session_ids) >= limit:
-                        raise HTTPException(
-                            status_code=403,
-                            detail=f"As a {user_tier.replace('_', ' ').title()} user, you can only participate in {limit} unique live quizzes per day. Upgrade plan to increase limits!"
-                        )
-
-        questions_res = supabase.table('quiz_questions').select('*').eq('session_id', s['id']).order('sort_order').execute()
-        q_list = []
-        for q in questions_res.data:
-            item = {k: q[k] for k in ('id', 'question_text', 'question_type', 'options', 'sort_order', 'points')}
-            if is_teacher:
-                item['correct_answer'] = q['correct_answer']
-            q_list.append(item)
-
-        return {**s, 'questions': q_list, 'is_teacher': is_teacher}
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+    return await secure_get(supabase, code, user_id)
 
 
 @app.post("/live-quiz/{code}/start")
@@ -993,7 +834,7 @@ async def start_live_quiz(code: str, teacher_id: str = Depends(get_current_user)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Quiz service is unavailable. Please try again.") from None
 
 
 @app.post("/live-quiz/{code}/next")
@@ -1023,7 +864,7 @@ async def next_question(code: str, teacher_id: str = Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Quiz service is unavailable. Please try again.") from None
 
 
 @app.post("/live-quiz/{code}/complete")
@@ -1040,66 +881,17 @@ async def complete_live_quiz(code: str, teacher_id: str = Depends(get_current_us
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Quiz service is unavailable. Please try again.") from None
 
 
 @app.post("/live-quiz/{code}/answer")
 async def submit_answer(code: str, data: StudentAnswerRequest, student_id: str = Depends(get_current_user)):
-    try:
-        session = supabase.table('quiz_sessions').select('id,status,current_question_index').eq('session_code', code.upper()).execute()
-        if not session.data:
-            raise HTTPException(status_code=404, detail="Session not found")
-        s = session.data[0]
-        if s['status'] != 'active':
-            raise HTTPException(status_code=400, detail="Quiz is not active")
-
-        question = supabase.table('quiz_questions').select('correct_answer,question_type,sort_order').eq('id', data.question_id).eq('session_id', s['id']).execute()
-        if not question.data:
-            raise HTTPException(status_code=404, detail="Question not found")
-        q = question.data[0]
-
-        if q['sort_order'] != s['current_question_index']:
-            raise HTTPException(status_code=400, detail="This question is not currently active")
-
-        submitted = data.submitted_answer.strip()
-        correct = q['correct_answer'].strip()
-        if q['question_type'] == 'fill_blank':
-            is_correct = submitted.lower() == correct.lower()
-        else:
-            is_correct = submitted == correct
-
-        try:
-            supabase.table('quiz_responses').insert({
-                'session_id': s['id'],
-                'student_id': student_id,
-                'student_name': data.student_name,
-                'question_id': data.question_id,
-                'submitted_answer': submitted,
-                'is_correct': is_correct
-            }).execute()
-        except Exception:
-            raise HTTPException(status_code=409, detail="Already answered this question")
-
-        return {"is_correct": is_correct, "correct_answer": correct}
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+    return await secure_answer(supabase, code, data, student_id)
 
 
 @app.get("/live-quiz/{code}/leaderboard")
 async def get_leaderboard(code: str, user_id: str = Depends(get_current_user)):
-    try:
-        session = supabase.table('quiz_sessions').select('id').eq('session_code', code.upper()).execute()
-        if not session.data:
-            raise HTTPException(status_code=404, detail="Session not found")
-        result = supabase.rpc('get_session_leaderboard', {'target_session_id': session.data[0]['id']}).execute()
-        return {"leaderboard": result.data}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await secure_leaderboard(supabase, code, user_id)
 
 
 # ==========================================

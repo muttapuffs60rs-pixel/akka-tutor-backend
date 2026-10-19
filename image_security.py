@@ -1,6 +1,7 @@
 """Download only images from this application's Supabase storage bucket."""
 
 from urllib.parse import unquote, urlsplit
+from uuid import UUID
 
 import requests
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
-def validate_image_url(url: str, supabase_url: str) -> str:
+def validate_image_url(url: str, supabase_url: str, user_id: str) -> str:
     source = urlsplit(supabase_url)
     try:
         target = urlsplit(url)
@@ -22,7 +23,8 @@ def validate_image_url(url: str, supabase_url: str) -> str:
             and target.password is None
         )
         path = unquote(target.path)
-        prefix = "/storage/v1/object/public/chat-images/chat_uploads/"
+        owner = str(UUID(user_id))
+        prefix = f"/storage/v1/object/authenticated/chat-images/chat_uploads/{owner}/"
         valid_path = (
             path.startswith(prefix)
             and len(path) > len(prefix)
@@ -30,18 +32,21 @@ def validate_image_url(url: str, supabase_url: str) -> str:
             and "\\" not in path
             and "%" not in path
         )
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         valid_origin = valid_path = False
     if not valid_origin or not valid_path or target.query or target.fragment:
         raise HTTPException(status_code=400, detail="Use an image uploaded through the app")
     return url
 
 
-def download_chat_image(url: str, supabase_url: str) -> tuple[bytes, str]:
-    url = validate_image_url(url, supabase_url)
+def download_chat_image(url: str, supabase_url: str, user_id: str, service_key: str) -> tuple[bytes, str]:
+    url = validate_image_url(url, supabase_url, user_id)
+    if not service_key:
+        raise HTTPException(status_code=503, detail="Image service is unavailable")
     try:
         # Redirects could escape the approved storage origin. Never follow them.
-        with requests.get(url, timeout=(5, 15), stream=True, allow_redirects=False) as response:
+        with requests.get(url, headers={"Authorization": f"Bearer {service_key}", "apikey": service_key},
+                          timeout=(5, 15), stream=True, allow_redirects=False) as response:
             if response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Uploaded image is unavailable")
             mime = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
