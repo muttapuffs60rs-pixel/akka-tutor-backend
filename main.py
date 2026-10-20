@@ -1,4 +1,5 @@
 from visitor_analytics import create_visitor_router
+from signup_help import create_signup_help_router
 from simple_arithmetic import simple_product
 # pyrefly: ignore [missing-import]
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string, time
@@ -153,6 +154,7 @@ app.include_router(create_answer_library_router(supabase, get_current_user))
 app.include_router(create_profile_activity_router(supabase, get_current_user))
 app.include_router(create_referral_router(supabase, get_current_user))
 app.include_router(create_visitor_router(supabase))
+app.include_router(create_signup_help_router(supabase))
 
 TOPUP_PACKS = {"topup_49": {"amount": 49, "credits": 300_000}}
 
