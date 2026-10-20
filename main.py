@@ -1,3 +1,4 @@
+from simple_arithmetic import simple_product
 # pyrefly: ignore [missing-import]
 import os, io, asyncio, traceback, requests, uvicorn, easyocr, functools, base64, random, string, time
 from typing import List, Optional, Literal
@@ -423,6 +424,7 @@ async def perform_chat(data: ChatRequest, user_id: str):
         data.history = bounded_history(data.history)
         # Prepare context search query early
         clean_question = data.question.strip() if data.question else ""
+        direct_product = simple_product(clean_question, data.image_url)
         search_query = retrieval_query(clean_question, data.history)
 
         extracted_text = None
@@ -479,11 +481,11 @@ async def perform_chat(data: ChatRequest, user_id: str):
 
         if extracted_text is not None:
             extracted_text = clip_text(extracted_text, 6000)
-        context = await asyncio.to_thread(
+        context = "" if direct_product is not None else await asyncio.to_thread(
             get_context, clip_text(search_query, 8000), data.subject, data.grade_level, board=data.board
         )
         context = clip_text(context, 12000)
-        cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context, board=data.board) if cache_eligible else None
+        cache_identity = answer_cache.identity(clean_question, data.subject, data.grade_level, context, board=data.board) if cache_eligible and direct_product is None else None
         cached = await asyncio.to_thread(answer_cache.lookup, cache_identity) if cache_identity else None
         if cached:
             if credit_admission.get('enabled') and credit_admission['remaining'] < 3000:
@@ -557,6 +559,13 @@ INSTRUCTIONS:
             status = "interrupted"
             finish_reason = None
             try:
+                if direct_product is not None:
+                    usage.update(input_tokens=0, output_tokens=0)
+                    vision_usage.update(input_tokens=0, output_tokens=0)
+                    answer_parts.append(direct_product)
+                    yield direct_product
+                    status = 'complete'
+                    return
                 async for chunk in deepseek_llm.bind(**chat_model_options(data.subject, search_query)).astream(messages):
                     finish_reason = (getattr(chunk, "response_metadata", None) or {}).get("finish_reason") or finish_reason
                     if chunk.usage_metadata:

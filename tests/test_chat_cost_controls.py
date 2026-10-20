@@ -1,3 +1,4 @@
+from simple_arithmetic import simple_product
 import ast
 import asyncio
 import os
@@ -156,3 +157,19 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
                 self.assertIn(f'Class {grade}, studying Science', captured[-1])
                 self.assertIn(GRADE_TEACHING_GUIDANCE[grade], captured[-1])
                 self.assertEqual(self.env['get_context'].call_args.args[2], grade)
+
+    async def test_standalone_product_is_exact_and_skips_ai_and_cache(self):
+        self.request.question = '1357*1357='
+        model = Mock()
+        self.env['deepseek_llm'] = model
+        response = await self.env['chat_handler'](self.request, 'student')
+        parts = [chunk async for chunk in response.body_iterator]
+        self.assertEqual(''.join(parts), '1357 × 1357 = 1,841,449')
+        model.bind.assert_not_called()
+        self.env['get_context'].assert_not_called()
+        self.env['answer_cache'].lookup.assert_not_called()
+        record = [call.args[1]['record'] for call in self.db.rpc.call_args_list
+                  if call.args[0] == 'finish_learning_credit_request'][-1]
+        self.assertEqual(record['status'], 'complete')
+        self.assertEqual(record['response_text'], ''.join(parts))
+        self.assertEqual(record['input_tokens'], 0)
