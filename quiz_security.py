@@ -16,7 +16,7 @@ class QuizBodyLimit:
         self.app, self.maximum = app, maximum
 
     async def __call__(self, scope, receive, send):
-        if scope['type'] != 'http' or not scope.get('path', '').startswith('/live-quiz/'):
+        if scope['type'] != 'http' or not (scope.get('path', '').startswith('/live-quiz/') or scope.get('path') in ('/generate-quiz', '/ask')):
             return await self.app(scope, receive, send)
         body = bytearray()
         while True:
@@ -24,7 +24,7 @@ class QuizBodyLimit:
             if message['type'] == 'http.disconnect':
                 return
             body.extend(message.get('body', b''))
-            if len(body) > self.maximum:
+            if len(body) > (65536 if scope.get('path') in ('/generate-quiz', '/ask') else self.maximum):
                 from starlette.responses import JSONResponse
                 return await JSONResponse({'detail': 'Quiz request is too large'}, status_code=413)(scope, receive, send)
             if not message.get('more_body', False):

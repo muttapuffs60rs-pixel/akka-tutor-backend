@@ -4,7 +4,7 @@ import ast
 import asyncio
 from pathlib import Path
 from types import SimpleNamespace
-from typing import List
+from typing import List, Literal
 import traceback
 import unittest
 from unittest.mock import Mock, patch
@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 from fastapi import Depends, HTTPException
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from image_security import MAX_IMAGE_BYTES, download_chat_image, validate_image_url
 from prompts import AKKA_QUIZ_PROMPT
@@ -35,7 +35,7 @@ def load_routes():
     for node in definitions:
         node.decorator_list = []
     namespace = {
-        "List": List, "BaseModel": BaseModel, "Field": Field,
+        "Literal": Literal, "field_validator": field_validator, "List": List, "BaseModel": BaseModel, "Field": Field,
         "asyncio": asyncio, "traceback": traceback, "HTTPException": HTTPException,
         "Depends": Depends, "get_current_user": lambda: None,
         "SecureStudentAnswer": SecureStudentAnswer, "secure_answer": secure_answer,

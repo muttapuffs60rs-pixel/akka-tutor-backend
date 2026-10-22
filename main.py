@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Depends, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from supabase import create_client, Client
 from langchain_deepseek import ChatDeepSeek
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -96,18 +96,26 @@ class ChatRequest(BaseModel):
     board: Literal["tn", "cbse"] = "tn"
     session_id: UUID
     client_request_id: Optional[UUID] = None
-    question: str = Field(min_length=1, max_length=2000)
-    subject: str = Field(min_length=1, max_length=100)
+    question: str = Field(min_length=1, max_length=2000, pattern=r"\S")
+    subject: str = Field(min_length=1, max_length=100, pattern=r"\S")
     grade_level: int = Field(ge=6, le=12)
     image_url: Optional[str] = Field(default=None, max_length=2048)
     history: List[dict] = Field(default_factory=list, max_length=20)
 
 class QuizRequest(BaseModel):
-    subject: str
-    units: List[str]
+    board: Literal["tn", "cbse"] = "tn"
+    subject: str = Field(min_length=1, max_length=100, pattern=r"\S")
+    units: List[str] = Field(min_length=1, max_length=20)
     grade_level: int = Field(ge=6, le=12)
     num_questions: int = Field(default=5, ge=1, le=25)
-    section: str = "All Sections"
+    section: str = Field(default="All Sections", min_length=1, max_length=150, pattern=r"\S")
+
+    @field_validator('units')
+    @classmethod
+    def validate_units(cls, values):
+        if any(not value.strip() or len(value) > 150 for value in values):
+            raise ValueError('Each topic must contain 1 to 150 characters')
+        return [value.strip() for value in values]
 
 class QuizQuestion(BaseModel):
     question: str
@@ -627,7 +635,8 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
             data.subject,
             data.grade_level,
             threshold=0.3,
-            count=8
+            count=8,
+            board=data.board
         )
 
         quiz_prompt = ChatPromptTemplate.from_messages([
@@ -647,6 +656,8 @@ async def generate_quiz(data: QuizRequest, user_id: str = Depends(get_current_us
         )
 
         quiz_data = await chain.ainvoke({
+            "board_name": "CBSE" if data.board == "cbse" else "Tamil Nadu State Board",
+            "explanation_language": "English" if data.board == "cbse" else "Tanglish",
             "num_questions": data.num_questions,
             "grade_level": data.grade_level,
             "subject": data.subject,
