@@ -59,9 +59,9 @@ The migration seeds existing conversation lengths without inventing historical c
   forgotten; students should restate essential details in a follow-up.
 - DeepSeek chat replies stop at 900 output tokens; the prompt asks for concise
   completed answers. DeepSeek thinking is disabled, automatic provider retries
-  are disabled, and Gemini image descriptions are capped at 700 output tokens.
+  are disabled. Uploaded images are read locally with EasyOCR; no image API is called.
   Validate teaching quality, especially complex maths, before release.
-- `ai_chat_requests` records DeepSeek and Gemini input/output usage separately.
+- `ai_chat_requests` records DeepSeek input/output usage. Legacy vision fields remain zero for new OCR-only requests.
   Missing metadata is NULL, never zero. `reserved`, `failed`, `interrupted`, and
   `usage_missing` records need reconciliation against provider billing.
 - This ledger covers chat, not generated quizzes. Monthly token subscriptions,
@@ -116,7 +116,7 @@ use AI until reapproval. Reviews must check edition validity; old-version entrie
 may remain visible to admins but cannot match a different current version.
 
 Cache hits record `response_source=cache`, `status=cached`, the entry ID, and zero
-DeepSeek/Gemini tokens in `ai_chat_requests`. They still consume one conversation
+DeepSeek tokens in `ai_chat_requests`. They still consume one conversation
 slot and the existing daily **question** allowance. No monthly token wallet or
 payment behavior was added. Daily question limits and AI token charges are distinct.
 

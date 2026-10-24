@@ -1,4 +1,5 @@
 from simple_arithmetic import simple_product
+from image_understanding import understand_image
 import ast
 import asyncio
 import os
@@ -134,7 +135,7 @@ class ChatCostTests(unittest.IsolatedAsyncioTestCase):
     async def test_grade_guidance_reaches_text_and_image_tutoring(self):
         from prompts import GRADE_TEACHING_GUIDANCE
         self.env['get_context'].return_value = 'Relevant atom textbook material'
-        self.env['download_chat_image'] = Mock(return_value=(b'image', 'image/jpeg'))
+        self.env['download_chat_image'] = Mock(return_value=(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00(\x00\x00\x00(\x08\x02\x00\x00\x00\x03\x9c/:\x00\x00\x00LIDATx\x9c\xed\xcd\xb1\x01\xc00\x0c\xc30\x87\xff\xff\xec\xae\xd1\x03\xccP\xe1\x01\x9c\xdd\x9d\x17x\xb2Nc\x11fvk\xac\xc1\xabRc\r^\x95\x1ak\xf0\xaa\xd4X\x83W\xa5\xc6\x1a\xbc*5\xd6\xe0U\xa9\xb1\x06\xafJ\x8d5x\xd5\xfc<\xfe\x00\x83\xeb\x03M\x08\x99x\x08\x00\x00\x00\x00IEND\xaeB`\x82', 'image/jpeg'))
         self.env['ocr_reader'] = Mock()
         self.env['ocr_reader'].readtext.return_value = ['A textbook question asking the student to explain the concept of an atom']
         captured = []
