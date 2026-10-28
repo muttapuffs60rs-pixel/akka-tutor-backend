@@ -10,6 +10,7 @@ from statistics import median
 import numpy as np
 from PIL import Image, ImageOps
 from fastapi import HTTPException
+from math_image_checks import perpendicular_glyphs, corrected_tesseract, verified_chord_check
 
 OCR_TIMEOUT = 25
 
@@ -67,16 +68,22 @@ def extract_image(image_bytes, reader):
             'question and upload a sharper photo, or type the question and measurements.',
             headers={'X-Chat-Error': 'image_unreadable'})
     secondary = ''
+    repairs = []
     command = tesseract_path()
     if command:
+        glyphs = perpendicular_glyphs(image)
+        transcription_image = np.array(image)
+        for x,y,width,height in glyphs:
+            transcription_image[y:y+height,x:x+width] = 255
         buffer = io.BytesIO()
-        image.save(buffer, format='PNG')
+        Image.fromarray(transcription_image).save(buffer, format='PNG')
         try:
-            result = subprocess.run([command, 'stdin', 'stdout', '--psm', '6', '-l', 'eng'],
+            result = subprocess.run([command, 'stdin', 'stdout', '--psm', '6', '-l', 'eng', 'tsv'],
                 input=buffer.getvalue(), capture_output=True, timeout=5,
                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             if result.returncode == 0:
-                secondary = result.stdout.decode('utf-8', errors='replace').strip()
+                secondary, repairs = corrected_tesseract(
+                    result.stdout.decode('utf-8', errors='replace'), glyphs)
         except (OSError, subprocess.TimeoutExpired):
             pass
     if not any(character.isalnum() for character in primary + secondary):
@@ -89,10 +96,17 @@ def extract_image(image_bytes, reader):
         text += '\n\nIndependent local OCR cross-check (not additional question text):\n' + secondary
     if uncertain:
         text += '\n\nOCR uncertain readings: ' + '; '.join(uncertain[:15])
+    if repairs:
+        text += '\n\nPixel-verified printed perpendicular symbol corrections: ' + '; '.join(repairs)
+    check = verified_chord_check(primary, secondary)
+    if check:
+        text += '\n\n' + check
     text += ('\n\nOCR accuracy note: transcription confidence does not establish correctness. '
              'Check both readings where available. Never silently resolve conflicting numbers '
-             'or interpret L, 1, + or - as a perpendicular symbol. Ask the student to confirm '
-             'any missing or conflicting fact needed to solve the problem. '
+             'or interpret L, 1, + or - as a perpendicular symbol without the pixel verification '
+             'reported above. Use verified symbols and mathematical consistency checks to solve '
+             'directly when they resolve the uncertainty. Ask the student to confirm only '
+             'a missing or conflicting fact that still affects the answer. '
              'OCR labels do not establish diagram relationships.')
     return text
 

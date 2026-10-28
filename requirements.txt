@@ -14,6 +14,7 @@ torch
 pydantic
 easyocr
 numpy
+opencv-python-headless
 pillow
 requests
 EbookLib

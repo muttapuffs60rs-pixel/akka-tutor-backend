@@ -41,3 +41,30 @@ accuracy benchmark. Mathematics symbols and diagrams still require confirmation
 where the transcriptions do not supply an unambiguous fact.
 
 Images with at least four uncertain readings making up a majority of detected text are rejected with a request for a sharper crop. Confidence is a heuristic, not proof that accepted text is accurate.
+
+## Printed maths symbols and fewer clarification turns (local changes, October 28)
+
+`math_image_checks.py` checks connected ink components for printed perpendicular
+symbols. It rejects lookalike L, 1, + and I shapes and uses glyph coordinates to
+mask and reinsert confirmed symbols in the independent Tesseract transcription.
+It does not globally replace characters in arbitrary questions.
+
+For two parallel chords with explicitly established perpendicular feet, both OCR
+readings must agree on chord lengths and separation before a local algebra check
+can establish the radius and chord arrangement. This is parameterized by the
+read measurements and labels, not a stored answer for the reported image.
+Missing, conflicting or dimensionally inconsistent facts receive no such check.
+
+The tutor prompt uses resolved evidence directly. A real OCR + DeepSeek test with
+the actual prompt solved the supplied image (and its full-resolution quality-95
+JPEG) as radius 5 cm without a clarification question. This is local validation
+with the real text provider, not verification of a new production deployment.
+Low-resolution/compressed variants still misread some point labels and correctly
+receive no algebra certificate. No universal handwriting/formula guarantee is made.
+
+The companion Flutter patch raises image quality/resolution and offers a full-photo
+preview as the primary action. Cropping remains available explicitly, so the old
+default crop cannot silently remove the start of the question or diagram labels.
+
+Validation: 35 backend tests and 10 Flutter tests. Source photo/model test artifacts
+are under the workspace output/math-image-precision-20261028 directory, outside Git.
